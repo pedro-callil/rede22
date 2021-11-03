@@ -1,8 +1,13 @@
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include <ncurses.h>
 #include <stdlib.h>
+#include <ctype.h>
+
+#define FALSE 0
+#define TRUE 1
+
 #define ITER 10000 /* Default maximum number of iterations */
 #define PI 3.14159265
 
@@ -18,10 +23,19 @@
 #define READ_EXISTING_FILE	0
 #define CREATE_NEW_FILE		1
 
+#define PRESSURE	23
+#define FLOW		34
+
 typedef struct {
-	double H_m;	/* Height of the knot */
-	double P_atm;	/* Pressure in the knot */
+	double H_m;		/* Height of the knot */
+	int is_external;	/* Check if knot cuts control volume */
 } knot;
+
+typedef struct {
+	double Q_m3_h_or_P_atm;	/* Flow or pressure in knot */
+	int specified_var;	/* Flow, pressure, or both specified */
+	int knot_number;	/* index of knot in system.knots */
+} specified_knot_vars;
 
 typedef struct {
 	double L_m;	/* Pipe Lenght */
@@ -31,8 +45,8 @@ typedef struct {
 	double Q_m3_h;	/* Flow rate */
 	double f;	/* Fanning friction factor */
 	double Re;	/* Reynolds' number */
-	knot *start;	/* Pointer to the first terminal knot */
-	knot *end;	/* Pointer to the second terminal knot */
+	int start;	/* Index of the first terminal knot */
+	int end;	/* Index of the second terminal knot */
 } net_pipe;
 
 typedef struct {
@@ -55,6 +69,7 @@ typedef struct {
 	net_pipe *pipes;
 	knot *knots;
 	fluid_specs *fluid;
+	specified_knot_vars *specs;
 } description;
 
 typedef struct {
