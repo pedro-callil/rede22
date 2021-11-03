@@ -6,9 +6,6 @@
 #define ITER 10000 /* Default maximum number of iterations */
 #define PI 3.14159265
 
-#define TRUE 0
-#define FALSE 1
-
 /* Type definitions */
 #define	NEWTONIAN		1
 #define	POWER_LAW_SMOOTH_PIPE	2
@@ -22,6 +19,11 @@
 #define CREATE_NEW_FILE		1
 
 typedef struct {
+	double H_m;	/* Height of the knot */
+	double P_atm;	/* Pressure in the knot */
+} knot;
+
+typedef struct {
 	double L_m;	/* Pipe Lenght */
 	double L_eq_m;	/* Equivalent lenght of singularities */
 	double D_cm;	/* Pipe diameter */
@@ -31,12 +33,7 @@ typedef struct {
 	double Re;	/* Reynolds' number */
 	knot *start;	/* Pointer to the first terminal knot */
 	knot *end;	/* Pointer to the second terminal knot */
-} pipe;
-
-typedef struct {
-	double H_m;	/* Height of the knot */
-	double P_atm;	/* Pressure in the knot */
-} knot;
+} net_pipe;
 
 typedef struct {
 	double eta_cP;		/* viscosity */
@@ -44,7 +41,7 @@ typedef struct {
 	double n;		/* Power Law - n factor */
 	double k_Pa_sn;		/* Power Law - k factor */
 	double T0_N_m2;		/* Bingham plastic - T0 */
-	double mi_infty_cP;	/* Bingham plastic - mi_infty factor */
+	double mu_infty_cP;	/* Bingham plastic - mu_infty factor */
 	double N0_cP;		/* Structural model - N0 */
 	double lambda_s;	/* Structural model - lambda factor */
 	double omega;		/* Structural model - omega factor */
@@ -55,26 +52,25 @@ typedef struct {
 } fluid_specs;
 
 typedef struct {
-	pipe *pipes;
+	net_pipe *pipes;
 	knot *knots;
 	fluid_specs *fluid;
-	net_specs *net;
 } description;
 
 typedef struct {
 	int type;
 	int existing_file;
+	int maxiter;
+	int interactive;
 	char *input_file_name;
 	char *output_file_name;
 	double Q_tol_percentage;
 	double dampening_factor;
 } options;
 
-extern void read_options (int argc, char **argv, info *options);
-extern void read_file (char *pathname, description *system);
-extern void write_input_file (char *pathname, description *system);
-extern void pivotal_condensation (double **matrix, int n, int a);
-extern void solve (double **matrix, double *array, int n);
-
-
+extern void read_options ( int argc, char **argv,
+		options *user_options, description *system );
+extern void initialize ( options *user_options, description *system );
+extern void iterate ( options *user_options, description *system );
+extern void finalize  ( options *user_options, description *system );
 
