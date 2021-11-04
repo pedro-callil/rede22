@@ -1,12 +1,71 @@
 #include "header.h"
 
 void print_help ( );
+void print_choices ( options *user_options, description *system );
 void interactive_session ( options *user_options, description *system );
 void read_from_file ( options *user_options, description *system );
+void read_from_command_line ( options *user_options, description *system );
 
 void read_options ( int argc, char **argv,
 		options *user_options, description *system ) {
-	print_help ();
+	/*print_help ();*/
+
+	user_options->input_file_name = argv[1];
+
+	read_from_file ( user_options, system );
+	print_choices ( user_options, system );
+
+}
+
+void print_choices ( options *user_options, description *system ) {
+
+	fprintf ( stderr, "OPTIONS SELECTED:\n" );
+	fprintf ( stderr, "  Iterations:   %d\n", user_options->maxiter );
+	fprintf ( stderr, "  Tolerance:    %lf%%\n", user_options->Q_tol_percentage );
+	fprintf ( stderr, "  Dampening:    %lf\n\n", user_options->dampening_factor );
+	fprintf ( stderr, "  Viscosity:    %lfcP\n", system->fluid.eta_cP );
+	fprintf ( stderr, "  Density:      %lfg/cm3\n", system->fluid.rho_g_cm3 );
+	switch ( user_options->type ) {
+		case POWER_LAW_SMOOTH_PIPE:
+			fprintf ( stderr, "  n:            %lf\n",
+					system->fluid.n );
+			fprintf ( stderr, "  k:            %lfPa/sn\n",
+					system->fluid.k_Pa_sn );
+			break;
+		case POWER_LAW_ROUGH_PIPE:
+			fprintf ( stderr, "  n:            %lf\n",
+					system->fluid.n );
+			fprintf ( stderr, "  k:            %lfPa/sn\n",
+					system->fluid.k_Pa_sn );
+			break;
+		case BINGHAM_PLASTIC:
+			fprintf ( stderr, "  T0:           %lfN/m2\n",
+					system->fluid.T0_N_m2 );
+			fprintf ( stderr, "  mu-infty:     %lfcP\n",
+					system->fluid.mu_infty_cP );
+			break;
+		case STRUCTURAL_MODEL:
+			fprintf ( stderr, "  N0:           %lfcP\n",
+					system->fluid.N0_cP );
+			fprintf ( stderr, "  lambda:       %lfs\n",
+					system->fluid.lambda_s );
+			fprintf ( stderr, "  omega:        %lf\n",
+					system->fluid.omega );
+			break;
+		case REAL_GAS:
+			fprintf ( stderr, "  T:            %lf C\n",
+					system->fluid.T_oC );
+			fprintf ( stderr, "  MM:           %lfg/gmol\n",
+					system->fluid.MM_g_gmol );
+			fprintf ( stderr, "  Z:            %lf\n",
+					system->fluid.Z );
+			fprintf ( stderr, "  Cp/Cv:        %lf\n",
+					system->fluid.k );
+			break;
+	}
+	fprintf ( stderr, "\n  Pipes:        %d\n", user_options->no_of_pipes );
+	fprintf ( stderr, "  Knots:        %d\n", user_options->no_of_knots );
+	fprintf ( stderr, "  Specs:        %d\n", user_options->no_of_specs );
 }
 
 void print_help ( ) {
@@ -177,16 +236,17 @@ void interactive_session ( options *user_options, description *system ) {
 
 void read_from_file ( options *user_options, description *system ) {
 
-	int is_knot_pipe_or_spec, is_knot, is_pipe,
-			is_spec, no_of_knots, no_of_pipes;
+	int is_knot_pipe_or_spec, is_knot, is_pipe, is_spec,
+		no_of_knots, no_of_pipes, no_of_specs;
 	long input_file_size;
 	char check;
 	char *file_as_string, *line, *word, *value_str;
-	char **saveptrstrtokline, **saveptrstrtokword;
+	char *saveptrstrtokline, *saveptrstrtokword;
 	FILE *input_file = fopen ( user_options->input_file_name, "r" );
 
 	if ( input_file == NULL ) {
-		fprintf ( stderr, "File %s not found, aborting...\n" );
+		fprintf ( stderr, "File %s not found, aborting...\n",
+				user_options->input_file_name );
 		exit ( EXIT_FAILURE );
 	} /* Checking input file existence */
 
@@ -194,7 +254,11 @@ void read_from_file ( options *user_options, description *system ) {
 	input_file_size = ftell ( input_file );
 	fseek ( input_file, 0, SEEK_SET );
 
-	file_as_string = malloc ( input_file_size + 1 );
+	file_as_string = malloc ( ( input_file_size + 1 ) * sizeof ( char ) );
+
+	if ( file_as_string != NULL ) {
+		fread ( file_as_string, 1, input_file_size, input_file );
+	}
 
 	fclose ( input_file );
 
@@ -223,10 +287,10 @@ void read_from_file ( options *user_options, description *system ) {
 				}
 			} else if ( ! strcmp ( word, "bingham" ) ) {
 				user_options->type = BINGHAM_PLASTIC;
-			else if ( ! strcmp ( word, "structural" ) ) {
+			} else if ( ! strcmp ( word, "structural" ) ) {
 				user_options->type = STRUCTURAL_MODEL;
-			else if ( ! strcmp ( word, "real" ) ) {
-				user_options->type = NEWTONIAN;
+			} else if ( ! strcmp ( word, "real" ) ) {
+				user_options->type = REAL_GAS;
 			} else {
 				user_options->type = NEWTONIAN;
 			}
@@ -252,73 +316,73 @@ void read_from_file ( options *user_options, description *system ) {
 		} else if ( ! strcmp ( word, "viscosity" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->eta_cP =
+				system->fluid.eta_cP =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "density" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->rho_g_cm3 =
+				system->fluid.rho_g_cm3 =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "n" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->n =
+				system->fluid.n =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "k" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->k_Pa_sn =
+				system->fluid.k_Pa_sn =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "T0" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->To_N_m2 =
+				system->fluid.T0_N_m2 =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "mu" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->mu_infty_cP =
+				system->fluid.mu_infty_cP =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "N0" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->N0_cP =
+				system->fluid.N0_cP =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "lambda" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->lambda_s =
+				system->fluid.lambda_s =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "omega" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->omega =
+				system->fluid.omega =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "T" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->T_oC =
+				system->fluid.T_oC =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "MM" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->MM_g_mol =
+				system->fluid.MM_g_gmol =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "Z" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->Z =
+				system->fluid.Z =
 					strtod ( word, NULL );
 			}
 		} else if ( ! strcmp ( word, "K" ) ||
@@ -326,26 +390,26 @@ void read_from_file ( options *user_options, description *system ) {
 			! strcmp ( word, "cp/cv" ) ) {
 			word = strtok_r ( NULL, " \n-", &saveptrstrtokword );
 			if ( word != NULL ) {
-				system->fluid->k =
+				system->fluid.k =
 					strtod ( word, NULL );
 			}
-		}
 		} else if ( ! strcmp ( word, "pipes" ) ) {
 			is_knot_pipe_or_spec = TRUE;
 			line = strtok_r ( NULL, "\n", &saveptrstrtokline );
 			check = line[0];
 			is_pipe = isdigit ( check );
 			no_of_pipes = 0;
+			system->pipes = malloc ( sizeof ( net_pipe ) );
 			while ( is_pipe ) {
-				realloc ( system->pipes, ( no_of_pipes + 1 ) *
-						sizeof ( net_pipe ) );
+				system->pipes = realloc ( system->pipes,
+					( no_of_pipes + 1 ) * sizeof ( net_pipe ) );
 				word = strtok_r ( line, " :\n-,",
 						&saveptrstrtokword );
+				word = strtok_r ( NULL, " :\n-,",
+					&saveptrstrtokword );
+				value_str = strtok_r ( NULL, " :\n-,",
+					&saveptrstrtokword );
 				while ( word != NULL ) {
-					word = strtok_r ( NULL, " :\n-,",
-						&saveptrstrtokword );
-					value_str = strtok_r ( NULL, " :\n-,",
-						&saveptrstrtokword );
 					if ( ! strcmp ( word, "lenght" ) ) {
 						system->pipes[no_of_pipes].L_m =
 							strtod ( value_str, NULL );
@@ -368,21 +432,31 @@ void read_from_file ( options *user_options, description *system ) {
 							1 + strtol ( value_str,
 								NULL, 0 );
 					}
+					word = strtok_r ( NULL, " :\n-,",
+						&saveptrstrtokword );
+					value_str = strtok_r ( NULL, " :\n-,",
+						&saveptrstrtokword );
 				}
 				line = strtok_r ( NULL, "\n", &saveptrstrtokline );
-				check = line[0];
-				is_knot = isdigit ( check );
+				if ( line != NULL ) {
+					check = line[0];
+					is_pipe = isdigit ( check );
+				} else {
+					is_pipe = FALSE;
+				}
 				no_of_pipes++;
 			}
+			user_options->no_of_pipes = no_of_pipes;
 		} else if ( ! strcmp ( word, "knots" ) ) {
 			is_knot_pipe_or_spec = TRUE;
 			line = strtok_r ( NULL, "\n", &saveptrstrtokline );
 			check = line[0];
 			is_knot = isdigit ( check );
 			no_of_knots = 0;
+			system->knots = malloc ( sizeof ( knot ) );
 			while ( is_knot ) {
-				realloc ( system->knots, ( no_of_knots + 1 ) *
-						sizeof ( knot ) );
+				system->knots = realloc ( system->knots,
+					( no_of_knots + 1 ) * sizeof ( knot ) );
 				word = strtok_r ( line, " :\n-,",
 						&saveptrstrtokword );
 				if ( word != NULL ) {
@@ -405,15 +479,18 @@ void read_from_file ( options *user_options, description *system ) {
 				is_knot = isdigit ( check );
 				no_of_knots++;
 			}
+			user_options->no_of_knots = no_of_knots;
 		} else if ( ! strcmp ( word, "specifications" ) ) {
 			is_knot_pipe_or_spec = TRUE;
 			line = strtok_r ( NULL, "\n", &saveptrstrtokline );
 			check = line[0];
 			is_spec = isdigit ( check );
 			no_of_specs = 0;
+			system->specs = malloc ( sizeof ( specified_knot_vars ) );
 			while ( is_spec ) {
-				realloc ( system->specs, ( no_of_specs + 1 ) *
-						sizeof ( specified_knot_vars ) );
+				system->specs = realloc ( system->specs,
+					( no_of_specs + 1 ) *
+					sizeof ( specified_knot_vars ) );
 				word = strtok_r ( line, " :\n-,",
 						&saveptrstrtokword );
 				if ( word != NULL ) {
@@ -433,7 +510,16 @@ void read_from_file ( options *user_options, description *system ) {
 						FLOW;
 					}
 				}
+				line = strtok_r ( NULL, "\n", &saveptrstrtokline );
+				if ( line != NULL ) {
+					check = line[0];
+					is_spec = isdigit ( check );
+				} else {
+					is_spec = FALSE;
+				}
+				no_of_specs++;
 			}
+			user_options->no_of_specs = no_of_specs;
 		}
 
 		if ( ! is_knot_pipe_or_spec ) {
@@ -441,5 +527,7 @@ void read_from_file ( options *user_options, description *system ) {
 		}
 
 	}
+
+	free ( file_as_string );
 
 }

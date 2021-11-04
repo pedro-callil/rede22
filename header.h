@@ -68,8 +68,8 @@ typedef struct {
 typedef struct {
 	net_pipe *pipes;
 	knot *knots;
-	fluid_specs *fluid;
 	specified_knot_vars *specs;
+	fluid_specs fluid;
 } description;
 
 typedef struct {
@@ -77,6 +77,9 @@ typedef struct {
 	int existing_file;
 	int maxiter;
 	int interactive;
+	int no_of_pipes;
+	int no_of_knots;
+	int no_of_specs;
 	char *input_file_name;
 	char *output_file_name;
 	double Q_tol_percentage;

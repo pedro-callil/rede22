@@ -13,10 +13,10 @@ int main ( int argc, char **argv ) {
 		Fill system; read (and maybe write) data file if needed.
 
 	iterate ( &user_options, &system );
-		Solve system.
+		Solve system. */
 
 	finalize ( &user_options, &system );
-		Print results or write to file, if required; free memory. */
+		/* Print results or write to file, if required; free memory. */
 
 	return EXIT_SUCCESS;
 
