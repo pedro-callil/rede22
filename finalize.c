@@ -2,9 +2,9 @@
 
 void finalize ( options *user_options, description *system ) {
 
-	free ( system->pipes );
-	free ( system->nodes );
-	free ( system->specs );
+	if ( system->pipes != NULL ) free ( system->pipes );
+	if ( system->nodes != NULL ) free ( system->nodes );
+	if ( system->specs != NULL ) free ( system->specs );
 
 }
 

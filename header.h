@@ -6,6 +6,11 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <getopt.h>
+
+#define VERSION_MAJOR 0
+#define VERSION_MINOR 0
+#define VERSION_PATCH 0
 
 #define FALSE 0
 #define TRUE 1
@@ -34,6 +39,11 @@
 
 #define RUGO_GEN	0.0025
 #define DIAM_GEN	10.000
+#define QTOL		0.01
+#define DAMP		0.50
+
+#define ETA_CP_DEFAULT		0.8891
+#define RHO_G_CM3_DEFAULT	1.0000
 
 typedef struct {
 	double H_m;		/* Height of the node */
@@ -83,14 +93,15 @@ typedef struct {
 
 typedef struct {
 	int type;			/* Fluid category */
-	int existing_file;		/* Read an existing file */
+	int existing_file;		/* Read an existing configuration file */
+	int write_results;		/* Write results to file */
 	int maxiter;			/* Maximum iteration number */
 	int interactive;		/* Prompt the user for data */
 	int no_of_nodes;
 	int no_of_pipes;		/* Number of nodes, pipes and specifications */
 	int no_of_specs;
 	int verbose_level;		/* Controls amount of printed material */
-	int help;
+	int help;			/* Prints small manual for CLI args */
 	double rugosity_general;	/* Sets global rugosity */
 	double diameter_general;	/* Sets global diameter */
 	char *input_file_name;		/* Existing file to be read from, its name */

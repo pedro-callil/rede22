@@ -4,6 +4,7 @@ void print_help ( );
 void print_choices ( options *user_options, description *system );
 void interactive_session ( options *user_options, description *system );
 void read_from_file ( options *user_options, description *system );
+void create_new_file ( options *user_options, description *system );
 void read_from_command_line ( int argc, char **argv,
 		options *user_options, description *system );
 void eval_node_options ( char *line, description *system, int no_of_nodes );
@@ -20,29 +21,45 @@ void eval_spec_options ( char *line, description *system, int no_of_specs );
 void read_options ( int argc, char **argv,
 		options *user_options, description *system ) {
 
-	user_options->help = FALSE;
-	user_options->interactive = FALSE;
+	user_options->type = NEWTONIAN;
+	user_options->existing_file = FALSE;
+	user_options->write_results = FALSE;
 	user_options->maxiter = MAXITER;
+	user_options->interactive = FALSE;
 	user_options->no_of_nodes = 0;
 	user_options->no_of_pipes = 0;
 	user_options->no_of_specs = 0;
+	user_options->help = FALSE;
+	user_options->verbose_level = QUIET;
 	user_options->rugosity_general = RUGO_GEN;
 	user_options->diameter_general = DIAM_GEN;
+	user_options->Q_tol_percentage = QTOL;
+	user_options->dampening_factor = DAMP;
+
+	system->fluid.eta_cP = ETA_CP_DEFAULT;
+	system->fluid.rho_g_cm3 = RHO_G_CM3_DEFAULT;
+
+	system->pipes = NULL;
+	system->nodes = NULL;
+	system->specs = NULL;
 
 
-	read_from_command_line ( argc, argv, user_options, system );
-
-	if ( user_options->help == TRUE ) {
-		print_help ();
+	if ( argc >= 2 ) {
+		read_from_command_line ( argc, argv, user_options, system );
 	}
 
-	user_options->input_file_name = argv[1];
+	if ( user_options->help == TRUE ) {
+		print_help ( argv );
+	}
 
-	user_options->existing_file = READ_EXISTING_FILE;
-	user_options->verbose_level = VERBOSE;
+	if ( user_options->interactive == TRUE ) {
+		interactive_session ( user_options, system );
+	}
 
 	if ( user_options->existing_file == READ_EXISTING_FILE ) {
 		read_from_file ( user_options, system );
+	} else if ( user_options->existing_file == CREATE_NEW_FILE ) {
+		create_new_file ( user_options, system );
 	}
 
 	print_choices ( user_options, system );
@@ -173,14 +190,21 @@ void print_choices ( options *user_options, description *system ) {
  * This function prints a small manual to the command line accepted by the
  * program.
  */
-void print_help ( ) {
+void print_help ( char **argv ) {
 
 	fprintf ( stdout,
-		"REDE22 --- Solve pipe networks \n\n" );
+		"%s --- Solve pipe networks \n", argv[0] );
+	fprintf ( stdout,
+		"    04/09/09 Jorge Andrey W. Gut\n" );
+	fprintf ( stdout,
+		"    05/11/21 Pedro Callil\n" );
+	fprintf ( stdout,
+		"    Version %d.%d.%d\n\n",
+			VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH );
 	fprintf ( stdout,
 		"OPTIONS: PROGRAM\n" );
 	fprintf ( stdout,
-		"  -i, --interative\n" );
+		"  -i, --interactive\n" );
 	fprintf ( stdout,
 		"    Prompt the user for inputs (as default in last version)\n" );
 	fprintf ( stdout,
@@ -196,9 +220,21 @@ void print_help ( ) {
 	fprintf ( stdout,
 		"    Print this help\n" );
 	fprintf ( stdout,
-		"  -v, --version\n" );
+		"  -V, --version\n" );
 	fprintf ( stdout,
-		"    Print program version\n\n" );
+		"    Print program version\n" );
+	fprintf ( stdout,
+		"  -Q, --tolerance=TOL\n" );
+	fprintf ( stdout,
+		"    Tolerance for flow rates' relative errors\n" );
+	fprintf ( stdout,
+		"  -a, --dampening=DAMPENING_FACTOR\n" );
+	fprintf ( stdout,
+		"    Dampening factor for solution\n" );
+	fprintf ( stdout,
+		"  -I, --iterations=MAXITER\n" );
+	fprintf ( stdout,
+		"    Maximum number of iterations\n\n" );
 	fprintf ( stdout,
 		"OPTIONS: GENERAL\n" );
 	fprintf ( stdout,
@@ -225,7 +261,7 @@ void print_help ( ) {
 	fprintf ( stdout,
 		"    Fluid density in g/cm3; defaults to 1.0\n" );
 	fprintf ( stdout,
-		"  -n, --viscosity=VISCOSITY\n" );
+		"  -v, --viscosity=VISCOSITY\n" );
 	fprintf ( stdout,
 		"    fluid viscosity in cP; defaults to 0.8891\n" );
 	fprintf ( stdout,
@@ -240,10 +276,6 @@ void print_help ( ) {
 	fprintf ( stdout, "    can be set with \"-p\" option for the n-th pipe\n" );
 
 	fprintf ( stdout, "OPTIONS: KNOTS AND PIPES\n" );
-	fprintf ( stdout,
-		"  -e, --external=EXTERNAL_KNOTS\n" );
-	fprintf ( stdout,
-		"    List of nodes open to entrances and exits\n" );
 	fprintf ( stdout,
 		"  -k, --node=KNOT_EXPRESSION\n" );
 	fprintf ( stdout,
@@ -314,7 +346,7 @@ void print_help ( ) {
 	fprintf ( stdout,
 		"    n-factor for power law\n" );
 	fprintf ( stdout,
-		"  -k, --k=K_FACTOR\n" );
+		"  -K, --k=K_FACTOR\n" );
 	fprintf ( stdout,
 		"    k-factor for power law\n" );
 	fprintf ( stdout,
@@ -348,7 +380,7 @@ void print_help ( ) {
 	fprintf ( stdout,
 		"    Compressibility factor for real gas\n" );
 	fprintf ( stdout,
-		"  -K, --K=K\n" );
+		"  -r, --r=r\n" );
 	fprintf ( stdout,
 		"    Ratio between Cp and Cv for real gas\n" );
 
@@ -359,6 +391,241 @@ void interactive_session ( options *user_options, description *system ) {
 
 void read_from_command_line ( int argc, char **argv,
 		options *user_options, description *system ) {
+
+	int c, no_of_nodes, no_of_pipes, no_of_specs;
+	char *node_opts, *pipe_opts, *spec_opts;
+	char *savenodeopts, *savepipeopts, *savespecopts;
+	const char *short_options =
+		"hf:o:V:I:a:Q:t:d:v:D:R:k:p:s:n:K:T:m:N:l:w:M:Z:r:";
+	struct option long_options[] = {
+		{"help",	no_argument,		NULL,	'h'},
+		{"file",	required_argument,	NULL,	'f'},
+		{"results",	required_argument,	NULL,	'o'},
+		{"verbose",	required_argument,	NULL,	'V'},
+		{"iterations",	required_argument,	NULL,	'I'},
+		{"dampening",	required_argument,	NULL,	'a'},
+		{"tolerance",	required_argument,	NULL,	'Q'},
+		{"type",	required_argument,	NULL,	't'},
+		{"density",	required_argument,	NULL,	'd'},
+		{"viscosity",	required_argument,	NULL,	'v'},
+		{"diameter",	required_argument,	NULL,	'D'},
+		{"rugosity",	required_argument,	NULL,	'R'},
+		{"node",	required_argument,	NULL,	'k'},
+		{"pipe",	required_argument,	NULL,	'p'},
+		{"spec",	required_argument,	NULL,	's'},
+		{"n",		required_argument,	NULL,	'n'},
+		{"k",		required_argument,	NULL,	'K'},
+		{"tzero",	required_argument,	NULL,	'T'},
+		{"muinfty",	required_argument,	NULL,	'm'},
+		{"nzero",	required_argument,	NULL,	'N'},
+		{"lambda",	required_argument,	NULL,	'l'},
+		{"omega",	required_argument,	NULL,	'w'},
+		{"mm",		required_argument,	NULL,	'M'},
+		{"Z",		required_argument,	NULL,	'Z'},
+		{"r",		required_argument,	NULL,	'r'}
+	};
+
+	while ( ( c = getopt_long ( argc, argv,
+			short_options, long_options, NULL ) ) != -1 ) {
+		switch (c) {
+			case -1:
+			case 0:
+				break;
+
+			case 'h':
+				user_options->help = TRUE;
+				user_options->verbose_level = QUIET;
+				break;
+
+			case 'f':
+				if ( ! access ( optarg, F_OK ) ) {
+					user_options->existing_file =
+						READ_EXISTING_FILE;
+				} else {
+					user_options->existing_file =
+						CREATE_NEW_FILE;
+				}
+				user_options->input_file_name = malloc (
+					( strlen ( optarg ) + 1 ) *
+					sizeof ( char ) );
+				strcpy ( user_options->input_file_name, optarg );
+				break;
+
+			case 'o':
+				user_options->write_results = TRUE;
+				user_options->output_file_name = malloc (
+					( strlen ( optarg ) + 1 ) *
+					sizeof ( char ) );
+				strcpy ( user_options->output_file_name, optarg );
+				break;
+
+			case 'V':
+				if ( ! strcmp ( optarg, "quiet" ) ) {
+					user_options->verbose_level = QUIET;
+				} else if ( ! strcmp ( optarg, "summary" ) ) {
+					user_options->verbose_level = NORMAL;
+				} else {
+					user_options->verbose_level = VERBOSE;
+				}
+				break;
+
+			case 'I':
+				user_options->maxiter = strtol ( optarg, NULL, 0 );
+				break;
+
+			case 'a':
+				user_options->dampening_factor =
+					strtod ( optarg, NULL );
+				break;
+
+			case 'Q':
+				user_options->Q_tol_percentage =
+					strtod ( optarg, NULL );
+				break;
+
+			case 't':
+				if ( ! strcmp ( optarg, "power law" ) ) {
+					user_options->type = POWER_LAW_SMOOTH_PIPE;
+				} else if ( ! strcmp ( optarg,
+						"power law (rough)" ) ) {
+					user_options->type = POWER_LAW_ROUGH_PIPE;
+				} else if ( !strcmp ( optarg, "bingham" ) ) {
+					user_options->type = BINGHAM_PLASTIC;
+				} else if ( !strcmp ( optarg, "structural" ) ) {
+					user_options->type = STRUCTURAL_MODEL;
+				} else if ( ! strcmp ( optarg, "real gas" ) ) {
+					user_options->type = REAL_GAS;
+				}
+				break;
+
+			case 'd':
+				system->fluid.rho_g_cm3 = strtod ( optarg, NULL );
+				break;
+
+			case 'v':
+				system->fluid.eta_cP = strtod ( optarg, NULL );
+				break;
+
+			case 'D':
+				user_options->diameter_general =
+					strtod ( optarg, NULL );
+				break;
+
+			case 'R':
+				user_options->rugosity_general =
+					strtod ( optarg, NULL );
+				break;
+
+			case 'k':
+				no_of_nodes = 0;
+				node_opts = strtok_r ( optarg, ",", &savenodeopts );
+				system->nodes = malloc ( sizeof ( node ) );
+				while ( node_opts != NULL ) {
+					system->nodes = realloc ( system->nodes,
+						( no_of_nodes + 1 ) *
+						sizeof ( node ) );
+					eval_node_options ( node_opts,
+						system, no_of_nodes );
+					no_of_nodes++;
+					node_opts = strtok_r ( NULL,
+						",", &savenodeopts );
+				}
+				user_options->no_of_nodes = no_of_nodes;
+				break;
+
+			case 'p':
+				no_of_pipes = 0;
+				pipe_opts = strtok_r ( optarg, ",", &savepipeopts );
+				system->pipes = malloc ( sizeof ( net_pipe ) );
+				while ( pipe_opts != NULL ) {
+					system->pipes = realloc ( system->pipes,
+						( no_of_pipes + 1 ) *
+						sizeof ( net_pipe ) );
+					system->pipes[no_of_pipes].D_cm =
+						user_options->diameter_general;
+					system->pipes[no_of_pipes].e_mm =
+						user_options->rugosity_general;
+					eval_pipe_options ( pipe_opts,
+						system, no_of_pipes );
+					no_of_pipes++;
+					pipe_opts = strtok_r ( NULL,
+						",", &savepipeopts );
+				}
+				user_options->no_of_pipes = no_of_pipes;
+				break;
+
+			case 's':
+				no_of_specs = 0;
+				spec_opts = strtok_r ( optarg, ",", &savespecopts );
+				system->specs = malloc ( sizeof
+					( specified_node_vars ) );
+				while ( spec_opts != NULL ) {
+					system->specs = realloc ( system->specs,
+						( no_of_specs + 1 ) *
+						sizeof ( specified_node_vars ) );
+					eval_spec_options ( spec_opts,
+						system, no_of_specs );
+					no_of_specs++;
+					spec_opts = strtok_r ( NULL,
+						",", &savespecopts );
+				}
+				user_options->no_of_specs = no_of_specs;
+				break;
+
+			case 'n':
+				system->fluid.n = strtod ( optarg, NULL );
+				break;
+
+			case 'K':
+				system->fluid.k_Pa_sn = strtod ( optarg, NULL );
+				break;
+
+			case 'T':
+				if ( user_options->type == BINGHAM_PLASTIC ) {
+					system->fluid.T0_N_m2 =
+						strtod ( optarg, NULL );
+				} else if ( user_options->type == REAL_GAS ) {
+					system->fluid.T_oC =
+						strtod ( optarg, NULL );
+				}
+				break;
+
+			case 'm':
+				system->fluid.mu_infty_cP =
+					strtod ( optarg, NULL );
+				break;
+
+			case 'N':
+				system->fluid.N0_cP =
+					strtod ( optarg, NULL );
+				break;
+
+			case 'l':
+				system->fluid.lambda_s =
+					strtod ( optarg, NULL );
+				break;
+
+			case 'w':
+				system->fluid.omega =
+					strtod ( optarg, NULL );
+				break;
+
+			case 'M':
+				system->fluid.MM_g_gmol =
+					strtod ( optarg, NULL );
+				break;
+
+			case 'Z':
+				system->fluid.Z =
+					strtod ( optarg, NULL );
+				break;
+
+			case 'r':
+				system->fluid.k =
+					strtod ( optarg, NULL );
+				break;
+		}
+	}
 }
 
 /*
@@ -714,4 +981,119 @@ void read_from_file ( options *user_options, description *system ) {
 
 	free ( file_as_string );
 
+}
+
+/*
+ * This function creates a new file, that can be used in another run.
+ * Takes as arguments the general user options (in a pointer to an
+ * options struct) and the system description (in a pointer to a
+ * description struct).
+ */
+void create_new_file ( options *user_options, description *system ) {
+
+	int i;
+	FILE *new_input_file;
+
+	new_input_file = fopen ( user_options->input_file_name, "w" );
+
+	fprintf ( new_input_file,
+		"This file was automatically built from user options\n\n" );
+
+	fprintf ( new_input_file,
+		"problem options:\n" );
+	fprintf ( new_input_file, "type " );
+	switch ( user_options->type ) {
+		case NEWTONIAN:
+			fprintf ( new_input_file, "newtonian\n" );
+			break;
+		case POWER_LAW_SMOOTH_PIPE:
+			fprintf ( new_input_file, "power law smooth pipe\n" );
+			fprintf ( new_input_file, "n %f\n",
+				system->fluid.n );
+			fprintf ( new_input_file, "k %f\n",
+				system->fluid.k_Pa_sn );
+			break;
+		case POWER_LAW_ROUGH_PIPE:
+			fprintf ( new_input_file, "power law rough pipe\n" );
+			fprintf ( new_input_file, "n %f\n",
+				system->fluid.n );
+			fprintf ( new_input_file, "k %f\n",
+				system->fluid.k_Pa_sn );
+			break;
+		case BINGHAM_PLASTIC:
+			fprintf ( new_input_file, "bingham plastic\n" );
+			fprintf ( new_input_file, "T0 %f\n",
+				system->fluid.T0_N_m2 );
+			fprintf ( new_input_file, "mu %f\n",
+				system->fluid.mu_infty_cP );
+			break;
+		case STRUCTURAL_MODEL:
+			fprintf ( new_input_file, "structural model\n" );
+			fprintf ( new_input_file, "N0 %f\n",
+				system->fluid.n );
+			fprintf ( new_input_file, "lambda %f\n",
+				system->fluid.lambda_s );
+			fprintf ( new_input_file, "omega %f\n",
+				system->fluid.omega );
+			break;
+		case REAL_GAS:
+			fprintf ( new_input_file, "real gas\n" );
+			fprintf ( new_input_file, "T %f\n",
+				system->fluid.T_oC );
+			fprintf ( new_input_file, "MM %f\n",
+				system->fluid.MM_g_gmol );
+			fprintf ( new_input_file, "Z %f\n",
+				system->fluid.Z );
+			fprintf ( new_input_file, "K %f\n",
+				system->fluid.k );
+			break;
+	}
+	fprintf ( new_input_file, "maxiter %d\n", user_options->maxiter );
+	fprintf ( new_input_file, "dampening %f\n", user_options->dampening_factor );
+	fprintf ( new_input_file, "tolerance %f\n", user_options->Q_tol_percentage );
+	fprintf ( new_input_file, "density %f\n", system->fluid.rho_g_cm3 );
+	fprintf ( new_input_file, "viscosity %f\n\n", system->fluid.eta_cP );
+
+	fprintf ( new_input_file, "rugosity %f\n", user_options->rugosity_general );
+	fprintf ( new_input_file, "diameter %f\n\n",
+			user_options->diameter_general );
+
+	fprintf ( new_input_file, "pipes\n" );
+	for ( i = 0; i < user_options->no_of_pipes; i++ ) {
+		fprintf ( new_input_file, "%d ", i+1 );
+		fprintf ( new_input_file, "lenght %f ", system->pipes[i].L_m );
+		fprintf ( new_input_file, "singularities %f ",
+				system->pipes[i].L_eq_m );
+		if ( system->pipes[i].D_cm != user_options->diameter_general ) {
+			fprintf ( new_input_file, "diameter %f ",
+					system->pipes[i].D_cm );
+		}
+		if ( system->pipes[i].D_cm != user_options->rugosity_general ) {
+			fprintf ( new_input_file, "rugosity %f ",
+					system->pipes[i].e_mm );
+		}
+		fprintf ( new_input_file, "start %d end %d\n",
+			system->pipes[i].start, system->pipes[i].end );
+	}
+
+	fprintf ( new_input_file, "\nnodes\n" );
+	for ( i = 0; i < user_options->no_of_nodes; i++ ) {
+		fprintf ( new_input_file, "%d ", i+1 );
+		fprintf ( new_input_file, "%f ", system->nodes[i].H_m );
+		if ( system->nodes[i].is_external == TRUE ) {
+			fprintf ( new_input_file, "external" );
+		}
+		fprintf ( new_input_file, "\n" );
+	}
+
+	fprintf ( new_input_file, "\nspecifications\n" );
+	for ( i = 0; i < user_options->no_of_specs; i++ ) {
+		fprintf ( new_input_file, "%d ", system->specs[i].node_number + 1 );
+		if ( system->specs[i].specified_var == FLOW ) {
+			fprintf ( new_input_file, "flow " );
+		} else {
+			fprintf ( new_input_file, "pressure " );
+		}
+		fprintf ( new_input_file, "%f\n", system->specs[i].Q_m3_h_or_P_atm );
+	}
 }
