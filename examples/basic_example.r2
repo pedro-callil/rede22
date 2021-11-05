@@ -8,18 +8,21 @@ fluid options:
 density 0.994
 viscosity 0.8891
 
-pipes
-1 lenght 100 singularities 10 diameter 10 rugosity 0.035 start 1 end 2
-2 lenght 300 singularities 10 diameter 10 rugosity 0.035 start 1 end 4
-3 lenght 300 singularities 10 diameter 10 rugosity 0.035 start 2 end 3
-4 lenght 100 singularities 10 diameter 10 rugosity 0.035 start 4 end 3
-5 lenght 100 singularities 10 diameter 5 rugosity 0.005 start 2 end 4
+rugosity 0.012
+diameter 12.00
 
-knots
+pipes
+1 lenght 100 singularities 10 rugosity 0.035 start 1 end 2
+2 lenght 300 singularities 10 start 1 end 4
+3 lenght 300 singularities 10 diameter 10 rugosity 0.035 start 2 end 3
+4 lenght 100 singularities 10 diameter 10 rugosity 0.045 start 4 end 3
+5 lenght 100 singularities 10 diameter 25 rugosity 0.05 start 2 end 4
+
+nodes
 1 12 external
 2 15
-3 2 external
-4 7
+3 22 external
+4 10
 
 specifications
 1 pressure 1

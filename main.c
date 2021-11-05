@@ -3,7 +3,7 @@
 int main ( int argc, char **argv ) {
 
 	options user_options; /* Command line user options. */
-	description system;     /* System description, with pipes, knots and
+	description system;     /* System description, with pipes, nodes and
 				* fluid characteristics. */
 
 	read_options ( argc, argv, &user_options, &system );

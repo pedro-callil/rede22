@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <errno.h>
+#include <argp.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -8,7 +10,11 @@
 #define FALSE 0
 #define TRUE 1
 
-#define ITER 10000 /* Default maximum number of iterations */
+#define QUIET 15
+#define NORMAL 16
+#define VERBOSE 17
+
+#define MAXITER 10000 /* Default maximum number of iterations */
 #define PI 3.14159265
 
 /* Type definitions */
@@ -20,22 +26,25 @@
 #define	REAL_GAS		6
 
 /* Definitions for handling files */
-#define READ_EXISTING_FILE	0
-#define CREATE_NEW_FILE		1
+#define READ_EXISTING_FILE	19
+#define CREATE_NEW_FILE		20
 
 #define PRESSURE	23
 #define FLOW		34
 
-typedef struct {
-	double H_m;		/* Height of the knot */
-	int is_external;	/* Check if knot cuts control volume */
-} knot;
+#define RUGO_GEN	0.0025
+#define DIAM_GEN	10.000
 
 typedef struct {
-	double Q_m3_h_or_P_atm;	/* Flow or pressure in knot */
+	double H_m;		/* Height of the node */
+	int is_external;	/* Check if node cuts control volume */
+} node;
+
+typedef struct {
+	double Q_m3_h_or_P_atm;	/* Flow or pressure in node */
 	int specified_var;	/* Flow, pressure, or both specified */
-	int knot_number;	/* index of knot in system.knots */
-} specified_knot_vars;
+	int node_number;	/* index of node in system.nodes */
+} specified_node_vars;
 
 typedef struct {
 	double L_m;	/* Pipe Lenght */
@@ -45,8 +54,8 @@ typedef struct {
 	double Q_m3_h;	/* Flow rate */
 	double f;	/* Fanning friction factor */
 	double Re;	/* Reynolds' number */
-	int start;	/* Index of the first terminal knot */
-	int end;	/* Index of the second terminal knot */
+	int start;	/* Index of the first terminal node */
+	int end;	/* Index of the second terminal node */
 } net_pipe;
 
 typedef struct {
@@ -67,22 +76,26 @@ typedef struct {
 
 typedef struct {
 	net_pipe *pipes;
-	knot *knots;
-	specified_knot_vars *specs;
+	node *nodes;
+	specified_node_vars *specs;
 	fluid_specs fluid;
 } description;
 
 typedef struct {
-	int type;
-	int existing_file;
-	int maxiter;
-	int interactive;
-	int no_of_pipes;
-	int no_of_knots;
+	int type;			/* Fluid category */
+	int existing_file;		/* Read an existing file */
+	int maxiter;			/* Maximum iteration number */
+	int interactive;		/* Prompt the user for data */
+	int no_of_nodes;
+	int no_of_pipes;		/* Number of nodes, pipes and specifications */
 	int no_of_specs;
-	char *input_file_name;
-	char *output_file_name;
-	double Q_tol_percentage;
+	int verbose_level;		/* Controls amount of printed material */
+	int help;
+	double rugosity_general;	/* Sets global rugosity */
+	double diameter_general;	/* Sets global diameter */
+	char *input_file_name;		/* Existing file to be read from, its name */
+	char *output_file_name;		/* Existing file to be written to, its name */
+	double Q_tol_percentage;	/* Flow rate relative error tolerance */
 	double dampening_factor;
 } options;
 
