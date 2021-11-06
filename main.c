@@ -9,10 +9,10 @@ int main ( int argc, char **argv ) {
 	read_options ( argc, argv, &user_options, &system );
 		/* Get user options, alloc memory; print help if needed. */
 
-	/*initialize ( &user_options, &system );
-		Fill system; read (and maybe write) data file if needed.
+	initialize ( &user_options, &system );
+		/* Fill system; read (and maybe write) data file if needed. */
 
-	iterate ( &user_options, &system );
+	/* iterate ( &user_options, &system );
 		Solve system. */
 
 	finalize ( &user_options, &system );

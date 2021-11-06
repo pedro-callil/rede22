@@ -45,9 +45,20 @@
 #define ETA_CP_DEFAULT		0.8891
 #define RHO_G_CM3_DEFAULT	1.0000
 
+#define READ_SIZE 1024 /* Maximum buffer size for user input */
+
+#define ECON_DIAM_A	0.752
+#define ECON_DIAM_B	1.887
+#define ECON_DIAM_C	0.302
+
+#define REAL_GAS_INIT_GUESS 0.01914
+
+#define CELSIUS_TO_KELVIN 273.15
+
 typedef struct {
 	double H_m;		/* Height of the node */
 	int is_external;	/* Check if node cuts control volume */
+	double P_atm;		/* Store pressure */
 } node;
 
 typedef struct {
@@ -79,6 +90,7 @@ typedef struct {
 	double lambda_s;	/* Structural model - lambda factor */
 	double omega;		/* Structural model - omega factor */
 	double T_oC;		/* Real Gas - temperature */
+	double T;		/* Real Gas - temperature with Z and in K */
 	double MM_g_gmol;	/* Real gas - molecular mass */
 	double Z;		/* Real gas - compressibility factor */
 	double k;		/* Real gas - Cp/Cv */

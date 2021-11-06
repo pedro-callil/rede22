@@ -1,6 +1,7 @@
 CC	= gcc
 SRC	= main.c \
 	  read_options.c \
+	  initialize.c \
 	  finalize.c
 
 HDR	= header.h

@@ -35,9 +35,13 @@ void read_options ( int argc, char **argv,
 	user_options->diameter_general = DIAM_GEN;
 	user_options->Q_tol_percentage = QTOL;
 	user_options->dampening_factor = DAMP;
+	user_options->input_file_name = NULL;
+	user_options->output_file_name = NULL;
 
 	system->fluid.eta_cP = ETA_CP_DEFAULT;
 	system->fluid.rho_g_cm3 = RHO_G_CM3_DEFAULT;
+
+	/* We set the default user options */
 
 	system->pipes = NULL;
 	system->nodes = NULL;
@@ -46,23 +50,20 @@ void read_options ( int argc, char **argv,
 
 	if ( argc >= 2 ) {
 		read_from_command_line ( argc, argv, user_options, system );
-	}
+	} else {
+		user_options->interactive = TRUE;
+	} /* If no arguments given, mimic behaviour of last version */
 
 	if ( user_options->help == TRUE ) {
 		print_help ( argv );
+	} else {
+		if ( user_options->existing_file == READ_EXISTING_FILE ) {
+			read_from_file ( user_options, system );
+		} if ( user_options->existing_file == CREATE_NEW_FILE ) {
+			create_new_file ( user_options, system );
+		}
+		print_choices ( user_options, system );
 	}
-
-	if ( user_options->interactive == TRUE ) {
-		interactive_session ( user_options, system );
-	}
-
-	if ( user_options->existing_file == READ_EXISTING_FILE ) {
-		read_from_file ( user_options, system );
-	} else if ( user_options->existing_file == CREATE_NEW_FILE ) {
-		create_new_file ( user_options, system );
-	}
-
-	print_choices ( user_options, system );
 
 }
 
@@ -203,10 +204,6 @@ void print_help ( char **argv ) {
 			VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH );
 	fprintf ( stdout,
 		"OPTIONS: PROGRAM\n" );
-	fprintf ( stdout,
-		"  -i, --interactive\n" );
-	fprintf ( stdout,
-		"    Prompt the user for inputs (as default in last version)\n" );
 	fprintf ( stdout,
 		"  -f, --file[=FILE]\n" );
 	fprintf ( stdout,
@@ -386,9 +383,6 @@ void print_help ( char **argv ) {
 
 }
 
-void interactive_session ( options *user_options, description *system ) {
-}
-
 void read_from_command_line ( int argc, char **argv,
 		options *user_options, description *system ) {
 
@@ -396,7 +390,7 @@ void read_from_command_line ( int argc, char **argv,
 	char *node_opts, *pipe_opts, *spec_opts;
 	char *savenodeopts, *savepipeopts, *savespecopts;
 	const char *short_options =
-		"hf:o:V:I:a:Q:t:d:v:D:R:k:p:s:n:K:T:m:N:l:w:M:Z:r:";
+		"hf:o:V:I:ia:Q:t:d:v:D:R:k:p:s:n:K:T:m:N:l:w:M:Z:r:";
 	struct option long_options[] = {
 		{"help",	no_argument,		NULL,	'h'},
 		{"file",	required_argument,	NULL,	'f'},
@@ -435,6 +429,10 @@ void read_from_command_line ( int argc, char **argv,
 			case 'h':
 				user_options->help = TRUE;
 				user_options->verbose_level = QUIET;
+				break;
+
+			case 'i':
+				user_options->interactive = TRUE;
 				break;
 
 			case 'f':
