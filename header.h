@@ -55,6 +55,16 @@
 
 #define CELSIUS_TO_KELVIN 273.15
 
+#define RE_FACTOR_NEWTONIAN	35367.765
+#define RE_FACTOR_REAL_GAS	127323.954
+
+#define RE_FACTOR_NEWTONIAN_REAL_GAS_B	37530
+#define RE_FACTOR_NEWTONIAN_REAL_GAS_C	0.027
+#define RE_FACTOR_NEWTONIAN_REAL_GAS_A	2.457
+
+#define BERNOULLI_FACTOR_NOT_GAS	24.69043
+#define BERNOULLI_FACTOR_GAS		262.5752
+
 typedef struct {
 	double H_m;		/* Height of the node */
 	int is_external;	/* Check if node cuts control volume */
@@ -63,7 +73,7 @@ typedef struct {
 
 typedef struct {
 	double Q_m3_h_or_P_atm;	/* Flow or pressure in node */
-	int specified_var;	/* Flow, pressure, or both specified */
+	int specified_var;	/* Flow or  pressure specified */
 	int node_number;	/* index of node in system.nodes */
 } specified_node_vars;
 

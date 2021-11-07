@@ -12,8 +12,8 @@ int main ( int argc, char **argv ) {
 	initialize ( &user_options, &system );
 		/* Fill system; read (and maybe write) data file if needed. */
 
-	/* iterate ( &user_options, &system );
-		Solve system. */
+	iterate ( &user_options, &system );
+		/* Solve system. */
 
 	finalize ( &user_options, &system );
 		/* Print results or write to file, if required; free memory. */
