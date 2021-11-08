@@ -10,6 +10,13 @@ void initialize ( options *user_options, description *system ) {
 	for ( i = 0; i < user_options->no_of_specs; i++ ) {
 		if ( system->specs[i].specified_var == PRESSURE ) {
 			no_of_spec_pressures ++;
+			if ( user_options->type != REAL_GAS ) {
+				system->specs[i].Q_m3_h_or_P_atm +=
+					P_TO_REAL_P *
+					system->fluid.rho_g_cm3 *
+					system->nodes[
+						system->specs[i].node_number].H_m;
+			}
 		}
 	}
 
