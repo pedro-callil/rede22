@@ -23,7 +23,7 @@
 #define NORMAL 16
 #define VERBOSE 17
 
-#define MAXITER 10000 /* Default maximum number of iterations */
+#define MAXITER 10001 /* Default maximum number of iterations */
 #define PI 3.14159265
 
 /* Type definitions */
@@ -37,6 +37,10 @@
 /* Definitions for handling files */
 #define READ_EXISTING_FILE	19
 #define CREATE_NEW_FILE		20
+
+#define	LAMINAR		45
+#define	TRANSITION	46
+#define	TURBULENT	47
 
 #define PRESSURE	23
 #define FLOW		34
@@ -97,6 +101,7 @@ typedef struct {
 	double H_m;		/* Height of the node */
 	int is_external;	/* Check if node cuts control volume */
 	double P_atm;		/* Store pressure */
+	double Q_ext;		/* External flow rate */
 } node;
 
 typedef struct {
@@ -113,6 +118,7 @@ typedef struct {
 	double Q_m3_h;	/* Flow rate */
 	double f;	/* Fanning friction factor */
 	double Re;	/* Reynolds' number */
+	int regime;	/* Laminar, turbulent or transition flow */
 	int start;	/* Index of the first terminal node */
 	int end;	/* Index of the second terminal node */
 } net_pipe;
@@ -146,6 +152,7 @@ typedef struct {
 	int existing_file;		/* Read an existing configuration file */
 	int write_results;		/* Write results to file */
 	int maxiter;			/* Maximum iteration number */
+	int iter_stop;			/* Last iteration number */
 	int interactive;		/* Prompt the user for data */
 	int no_of_nodes;
 	int no_of_pipes;		/* Number of nodes, pipes and specifications */
@@ -164,5 +171,6 @@ extern void read_options ( int argc, char **argv,
 		options *user_options, description *system );
 extern void initialize ( options *user_options, description *system );
 extern void iterate ( options *user_options, description *system );
+extern void print_and_write ( options *user_options, description *system );
 extern void finalize  ( options *user_options, description *system );
 

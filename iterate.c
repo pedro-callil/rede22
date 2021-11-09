@@ -9,6 +9,8 @@ void iterate ( options *user_options, description *system ) {
 	int n, no_of_open_nodes, no_of_spec_pressures, no_of_spec_flow_rates;
 	int iter, i, j, cont_pres, cont_flow;
 	int open_node;
+	int check_if_last, conv_nodes, conv_pipes;
+	double err_node, err_pipe;
 	double *cons_vector, *x_vector;
 	double **main_matrix;
 
@@ -44,16 +46,23 @@ void iterate ( options *user_options, description *system ) {
 
 	if ( user_options->verbose_level == NORMAL ||
 			user_options->verbose_level == VERBOSE ) {
-		fprintf ( stderr, "  Starting calculations... " );
+		fprintf ( stderr, "  Starting calculations...\n\t" );
 	}
 
+	check_if_last = FALSE;
+	user_options->iter_stop = user_options->maxiter;
 	/* Main loop of the program */
 	for ( iter = 0; iter < user_options->maxiter; iter++ ) {
 
 		if ( user_options->verbose_level == NORMAL ||
 				user_options->verbose_level == VERBOSE ) {
 			if ( ( iter + 1 ) % 10 == 0 || iter == 0 ) {
-				fprintf ( stderr, "\n\tIteration %d, ", iter + 1 );
+				if ( user_options->verbose_level == VERBOSE ) {
+					fprintf ( stderr, "\n\tIteration %d, ",
+							iter + 1 );
+				} else {
+					fprintf ( stderr, "%d ", iter + 1);
+				}
 			}
 			if ( user_options->verbose_level == VERBOSE &&
 					( ( iter + 1 ) % 10 != 0 ) &&
@@ -184,7 +193,7 @@ void iterate ( options *user_options, description *system ) {
 					user_options->dampening_factor *
 					( x_vector[i] - system->pipes[i].Q_m3_h );
 			}
-			if ( user_options->type != REAL_GAS ) {
+			if ( user_options->type == REAL_GAS ) {
 				for ( i = 0; i < user_options->no_of_nodes; i++ ) {
 					system->nodes[i].P_atm +=
 						user_options->dampening_factor *
@@ -195,11 +204,51 @@ void iterate ( options *user_options, description *system ) {
 			}
 		}
 
+		conv_pipes = TRUE;
+		conv_nodes = TRUE;
+		for ( i = 0; i < user_options->no_of_pipes; i++ ) {
+			err_pipe = 100 * fabs ( system->pipes[i].Q_m3_h -
+					x_vector[i] ) / system->pipes[i].Q_m3_h;
+			if ( err_pipe > user_options->Q_tol_percentage ) {
+				conv_pipes = FALSE;
+			}
+		}
+		if ( user_options->type == REAL_GAS ) {
+			for ( i = 0; i < user_options->no_of_nodes; i++ ) {
+				err_node = 100 * fabs ( system->nodes[i].P_atm -
+						x_vector[user_options->no_of_pipes +
+						user_options->no_of_specs + i] ) /
+						system->nodes[i].P_atm;
+				if ( err_node > user_options->Q_tol_percentage ) {
+					conv_nodes = FALSE;
+				}
+			}
+		}
+		if ( check_if_last == FALSE &&
+				conv_nodes == TRUE && conv_pipes == TRUE ) {
+			user_options->iter_stop = iter + 1;
+			iter = user_options->maxiter - 1;
+			check_if_last = TRUE;
+		}
+
+	}
+
+	j = 0;
+	for ( i = 0; i < user_options->no_of_nodes; i++ ) {
+		if ( system->nodes[i].is_external == TRUE ) {
+			system->nodes[i].Q_ext =
+				x_vector[user_options->no_of_pipes + j];
+			j++;
+		} else {
+			system->nodes[i].Q_ext = 0;
+		}
+		system->nodes[i].P_atm = x_vector[user_options->no_of_pipes+
+			user_options->no_of_specs+i];
 	}
 
 	if ( user_options->verbose_level == NORMAL ||
 			user_options->verbose_level == VERBOSE ) {
-		fprintf ( stderr, "\n" );
+		fprintf ( stderr, "\n\n" );
 	}
 
 	for ( i = 0; i < n; i++ ) {
@@ -219,7 +268,7 @@ void iterate ( options *user_options, description *system ) {
 void fanning ( options *user_options, description *system ) {
 
 	int i;
-	double A, B, C, Re_factor, Rec;
+	double A, B, C, Re_factor, Re_crit;
 	double HDe, f_turb, f_lami, f_lami_old, deviation;
 
 	if ( user_options->type == NEWTONIAN ||
@@ -233,6 +282,13 @@ void fanning ( options *user_options, description *system ) {
 			system->pipes[i].Re = ( Re_factor *
 				fabs ( system->pipes[i].Q_m3_h ) ) /
 				( system->fluid.eta_cP * system->pipes[i].D_cm );
+			if ( system->pipes[i].Re <= 2100 ) {
+				system->pipes[i].regime = LAMINAR;
+			} else if ( system->pipes[i].Re <= 4500 ) {
+				system->pipes[i].regime = TRANSITION;
+			} else {
+				system->pipes[i].regime = TURBULENT;
+			}
 			B = pow ( ( RE_FACTOR_NEWTONIAN_REAL_GAS_B /
 					system->pipes[i].Re ), 16 );
 			C = pow ( ( 7 / system->pipes[i].Re ), 0.9 ) +
@@ -261,10 +317,10 @@ void fanning ( options *user_options, description *system ) {
 		}
 		if ( user_options->type == POWER_LAW_SMOOTH_PIPE ) {
 			for ( i = 0; i < user_options->no_of_pipes; i++ ) {
-				Rec = REC_POWER_LAW_LIN + REC_POWER_LAW_ANG *
+				Re_crit = REC_POWER_LAW_LIN + REC_POWER_LAW_ANG *
 					( 1.0 - system->fluid.n );
 				A = 1.0 / ( 1 + pow ( 4.0,
-						Rec - system->pipes[i].Re ) );
+						Re_crit - system->pipes[i].Re ) );
 				B = pow ( system->pipes[i].Re,
 					RE_EXP_POWER_LAW_LIN_B +
 					RE_EXP_POWER_LAW_ANG_B * system->fluid.n ) *
@@ -281,9 +337,18 @@ void fanning ( options *user_options, description *system ) {
 					system->pipes[i].Re +
 					A * pow ( pow ( B, -8 ) + pow ( C, -8),
 						-1.0/8.0 );
+				if ( system->pipes[i].Re <= Re_crit ) {
+					system->pipes[i].regime = LAMINAR;
+				} else if ( system->pipes[i].Re <= 4500 ) {
+					system->pipes[i].regime = TRANSITION;
+				} else {
+					system->pipes[i].regime = TURBULENT;
+				}
 			}
 		} else {
 			for ( i = 0; i < user_options->no_of_pipes; i++ ) {
+				Re_crit = REC_POWER_LAW_LIN + REC_POWER_LAW_ANG *
+					( 1.0 - system->fluid.n );
 				B = pow ( ( RE_FACTOR_NEWTONIAN_REAL_GAS_B /
 						system->pipes[i].Re ), 16 );
 				C = pow ( ( 7 / system->pipes[i].Re ), 0.9 ) +
@@ -295,6 +360,13 @@ void fanning ( options *user_options, description *system ) {
 				C = pow ( ( 8 / system->pipes[i].Re), 12 ) + 1.0 /
 					( pow ( ( A + B ), 1.5 ) );
 				system->pipes[i].f = 2 * pow ( C, ( 1.0 / 12.0 ) );
+				if ( system->pipes[i].Re <= Re_crit ) {
+					system->pipes[i].regime = LAMINAR;
+				} else if ( system->pipes[i].Re <= 4500 ) {
+					system->pipes[i].regime = TRANSITION;
+				} else {
+					system->pipes[i].regime = TURBULENT;
+				}
 			}
 		}
 	} else if ( user_options->type == BINGHAM_PLASTIC ) {
@@ -328,6 +400,7 @@ void fanning ( options *user_options, description *system ) {
 			}
 			system->pipes[i].f = pow ( pow ( f_lami, B ) +
 						pow ( f_turb, B ), 1.0 / B );
+			system->pipes[i].regime = BINGHAM_PLASTIC;
 		}
 	} else { /* For structural model */
 		for ( i = 0; i < user_options->no_of_pipes; i++ ) {
@@ -350,6 +423,15 @@ void fanning ( options *user_options, description *system ) {
 					pow ( system->pipes[i].Re, 0.34 ) ) /
 				pow ( 1.0 + pow ( B, 2 ), 0.33 );
 			system->pipes[i].f = f_turb / sqrt ( 1 + pow ( HDe, 2 ) );
+			Re_crit = REC_POWER_LAW_LIN + REC_POWER_LAW_ANG *
+				( 1.0 - system->fluid.n );
+			if ( system->pipes[i].Re <= Re_crit ) {
+				system->pipes[i].regime = LAMINAR;
+			} else if ( system->pipes[i].Re <= 4500 ) {
+				system->pipes[i].regime = TRANSITION;
+			} else {
+				system->pipes[i].regime = TURBULENT;
+			}
 		}
 	}
 }

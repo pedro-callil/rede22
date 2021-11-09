@@ -468,7 +468,8 @@ void read_from_command_line ( int argc, char **argv,
 				break;
 
 			case 'I':
-				user_options->maxiter = strtol ( optarg, NULL, 0 );
+				user_options->maxiter =
+					strtol ( optarg, NULL, 0 ) + 1;
 				break;
 
 			case 'a':
@@ -911,6 +912,7 @@ void read_from_file ( options *user_options, description *system ) {
 					user_options->diameter_general;
 				system->pipes[no_of_pipes].e_mm =
 					user_options->rugosity_general;
+				system->pipes[no_of_pipes].L_eq_m = 0;
 				eval_pipe_options ( line, system, no_of_pipes );
 				line = strtok_r ( NULL, "\n", &saveptrstrtokline );
 				if ( line != NULL ) {

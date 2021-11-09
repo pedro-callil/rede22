@@ -4,6 +4,7 @@ SRC	= main.c \
 	  read_options.c \
 	  initialize.c \
 	  iterate.c \
+	  print_and_write.c \
 	  finalize.c
 
 HDR	= header.h

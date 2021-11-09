@@ -15,8 +15,11 @@ int main ( int argc, char **argv ) {
 	iterate ( &user_options, &system );
 		/* Solve system. */
 
+	print_and_write ( &user_options, &system );
+		/* Print results or write to file, if required. */
+
 	finalize ( &user_options, &system );
-		/* Print results or write to file, if required; free memory. */
+		/* Free memory. */
 
 	return EXIT_SUCCESS;
 
