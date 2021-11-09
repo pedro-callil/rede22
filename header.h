@@ -2,11 +2,15 @@
 #include <string.h>
 #include <math.h>
 #include <errno.h>
-#include <argp.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <getopt.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+/* Portability */
+# define strtok_r strtok_s
+#endif
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 0
@@ -74,6 +78,17 @@
 #define RE_EXP_POWER_LAW_ANG_C	2.39
 #define RE_EXP_POWER_LAW_LIN_C	1.87
 #define RATIO_POWER_LAW_C	0.0682
+
+#define RE_FACTOR_BINGHAM	35367.765
+#define FACTOR_BINGHAM_LIN_A	-1.378
+#define FACTOR_BINGHAM_ANG_A	0.146
+#define FACTOR_BINGHAM_EXP_A	-1.0/34482.76
+#define FACTOR_BINGHAM_TURB	-0.193
+
+#define FACTOR_STRUCTURAL_A	2829.42
+#define FACTOR_STRUCTURAL_LIN_B	0.0867
+#define FACTOR_STRUCTURAL_EXP_B	0.237
+
 
 #define BERNOULLI_FACTOR_NOT_GAS	24.69043
 #define BERNOULLI_FACTOR_GAS		262.5752

@@ -1,13 +1,15 @@
 #include "header.h"
 
 void fanning ( options *user_options, description *system );
+void pivot_and_solve ( double **main_matrix, double *cons_vector,
+		double *x_vector, int n );
 
 void iterate ( options *user_options, description *system ) {
 
 	int n, no_of_open_nodes, no_of_spec_pressures, no_of_spec_flow_rates;
 	int iter, i, j, cont_pres, cont_flow;
 	int open_node;
-	double *cons_vector;
+	double *cons_vector, *x_vector;
 	double **main_matrix;
 
 
@@ -32,8 +34,10 @@ void iterate ( options *user_options, description *system ) {
 
 	main_matrix = malloc ( n * sizeof ( double * ) );
 	cons_vector = malloc ( n * sizeof ( double ) );
+	x_vector = malloc ( n * sizeof ( double ) );
 	for ( i = 0; i < n; i++ ) {
 		main_matrix[i] = malloc ( n* sizeof ( double ) );
+		x_vector[i] = 0;
 	}
 
 	/* Main loop of the program */
@@ -171,6 +175,26 @@ void iterate ( options *user_options, description *system ) {
 				cont_flow++;
 			}
 		}
+
+		pivot_and_solve ( main_matrix, cons_vector, x_vector, n );
+
+		if ( iter < user_options->maxiter ) {
+			for ( i = 0; i < user_options->no_of_pipes; i++ ) {
+				system->pipes[i].Q_m3_h +=
+					user_options->dampening_factor *
+					( x_vector[i] - system->pipes[i].Q_m3_h );
+			}
+			if ( user_options->type != REAL_GAS ) {
+				for ( i = 0; i < user_options->no_of_nodes; i++ ) {
+					system->nodes[i].P_atm +=
+						user_options->dampening_factor *
+						( x_vector[user_options->no_of_pipes +
+						user_options->no_of_specs + i] -
+						system->nodes[i].P_atm );
+				}
+			}
+		}
+
 	}
 
 	if ( user_options->verbose_level == NORMAL ||
@@ -183,6 +207,7 @@ void iterate ( options *user_options, description *system ) {
 	}
 	free ( main_matrix );
 	free ( cons_vector );
+	free ( x_vector );
 
 }
 
@@ -195,6 +220,7 @@ void fanning ( options *user_options, description *system ) {
 
 	int i;
 	double A, B, C, Re_factor, Rec;
+	double HDe, f_turb, f_lami, f_lami_old, deviation;
 
 	if ( user_options->type == NEWTONIAN ||
 			user_options->type == REAL_GAS ) {
@@ -271,8 +297,117 @@ void fanning ( options *user_options, description *system ) {
 				system->pipes[i].f = 2 * pow ( C, ( 1.0 / 12.0 ) );
 			}
 		}
+	} else if ( user_options->type == BINGHAM_PLASTIC ) {
+		for ( i = 0; i < user_options->no_of_pipes; i++ ) {
+			system->pipes[i].Re = ( RE_FACTOR_BINGHAM *
+					system->pipes[i].Q_m3_h *
+					system->fluid.rho_g_cm3 ) /
+					( system->pipes[i].D_cm *
+					system->fluid.mu_infty_cP );
+			HDe = 100000.0 * pow ( system->pipes[i].D_cm /
+					system->fluid.mu_infty_cP, 2 ) *
+					system->fluid.rho_g_cm3 *
+					system->fluid.T0_N_m2;
+			A = FACTOR_BINGHAM_LIN_A * ( 1.0 + FACTOR_BINGHAM_ANG_A *
+					exp ( FACTOR_BINGHAM_EXP_A * HDe ) );
+			B = 1.7 + ( 40000 / system->pipes[i].Re );
+			f_turb = pow ( 10.0, A ) *
+				pow ( system->pipes[i].Re, FACTOR_BINGHAM_TURB );
+			f_lami = ( 16.0 / system->pipes[i].Re ) *
+				( 1.0 + HDe / ( 6.0 * system->pipes[i].Re ) );
+			deviation = 2 * user_options->Q_tol_percentage;
+			while ( deviation > user_options->Q_tol_percentage ) {
+				f_lami_old = f_lami;
+				f_lami = ( 1.0 + HDe / ( 6.0 * system->pipes[i].Re ) -
+					pow ( HDe, 4 ) / ( 3.0 *
+					pow ( system->pipes[i].Re, 7.0 ) *
+					pow ( f_lami_old, 3.0 ) ) ) *
+					( 16.0 / system->pipes[i].Re );
+				deviation = 100 * fabs ( ( f_lami - f_lami_old ) /
+						f_lami_old );
+			}
+			system->pipes[i].f = pow ( pow ( f_lami, B ) +
+						pow ( f_turb, B ), 1.0 / B );
+		}
+	} else { /* For structural model */
+		for ( i = 0; i < user_options->no_of_pipes; i++ ) {
+			system->pipes[i].Re = ( RE_FACTOR_BINGHAM *
+					system->pipes[i].Q_m3_h *
+					system->fluid.rho_g_cm3 ) /
+					( system->pipes[i].D_cm *
+					system->fluid.eta_cP );
+			f_turb = 0.41 * pow ( log ( system->pipes[i].Re / 7.0 ),
+					-2.0 );
+			A = ( FACTOR_STRUCTURAL_A *
+				system->pipes[i].Q_m3_h * system->fluid.lambda_s ) /
+				pow ( system->pipes[i].D_cm, 3.0 );
+			B = sqrt ( pow ( 1.0 + pow ( A, 2 ),
+					system->fluid.omega ) - 1.0 );
+			HDe = ( FACTOR_STRUCTURAL_LIN_B * B *
+					pow ( system->fluid.eta_cP /
+						system->fluid.N0_cP,
+							FACTOR_STRUCTURAL_EXP_B ) *
+					pow ( system->pipes[i].Re, 0.34 ) ) /
+				pow ( 1.0 + pow ( B, 2 ), 0.33 );
+			system->pipes[i].f = f_turb / sqrt ( 1 + pow ( HDe, 2 ) );
+		}
 	}
+}
 
+void pivot ( double **main_matrix, double *cons_vector, int n, int i ) {
 
+	int ii, jj, bigger;
+	double c1, c2, switcher;
+
+	bigger = i;
+	if ( main_matrix[i][i] < 0 ) {
+		c1 = -main_matrix[i][i];
+	} else {
+		c1 = main_matrix[i][i];
+	}
+	for ( ii = i + 1; ii < n; ii++ ) {
+		if ( main_matrix[ii][i] < 0 ) {
+			c2 = -main_matrix[ii][i];
+		} else {
+			c2 = main_matrix[ii][i];
+		}
+		if ( c2 > c1 ) {
+			bigger = ii;
+			c1 = c2;
+		}
+	}
+	for ( jj = 0; jj < n;jj++ ) {
+		switcher = main_matrix[i][jj];
+		main_matrix[i][jj] = main_matrix[bigger][jj];
+		main_matrix[bigger][jj] = switcher;
+	}
+	switcher = cons_vector[i];
+	cons_vector[i] = cons_vector[bigger];
+	cons_vector[bigger] = switcher;
+}
+
+void pivot_and_solve ( double **main_matrix, double *cons_vector,
+		double *x_vector, int n ) {
+
+	int i, j, k;
+	double a;
+
+	for ( i = 0; i < n - 1; i++ ) {
+		pivot ( main_matrix, cons_vector, n, i );
+		for ( j = i + 1; j < n; j++ ) {
+			a = main_matrix[j][i]/main_matrix[i][i];
+			for ( k = i; k < n; k++ ) {
+				main_matrix[j][k] -= a*main_matrix[i][k];
+			}
+			cons_vector[j] -= a*cons_vector[i];
+		}
+	}
+	for ( j = n - 1; j >= 0; j-- ) {
+		a = 0;
+		for ( k = j + 1; k < n; k++ ) {
+			a += main_matrix[j][k] * x_vector[k];
+		}
+		x_vector[j] = ( cons_vector[j] - a ) / main_matrix[j][j];
+	}
 }
 
