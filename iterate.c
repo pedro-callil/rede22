@@ -46,7 +46,7 @@ void iterate ( options *user_options, description *system ) {
 
 	if ( user_options->verbose_level == NORMAL ||
 			user_options->verbose_level == VERBOSE ) {
-		fprintf ( stderr, "  Starting calculations...\n\t" );
+		fprintf ( stdout, "  Starting calculations...\n\t" );
 	}
 
 	check_if_last = FALSE;
@@ -58,16 +58,16 @@ void iterate ( options *user_options, description *system ) {
 				user_options->verbose_level == VERBOSE ) {
 			if ( ( iter + 1 ) % 10 == 0 || iter == 0 ) {
 				if ( user_options->verbose_level == VERBOSE ) {
-					fprintf ( stderr, "\n\tIteration %d, ",
+					fprintf ( stdout, "\n\tIteration %d, ",
 							iter + 1 );
 				} else {
-					fprintf ( stderr, "%d ", iter + 1);
+					fprintf ( stdout, "%d ", iter + 1);
 				}
 			}
 			if ( user_options->verbose_level == VERBOSE &&
 					( ( iter + 1 ) % 10 != 0 ) &&
 						iter != 0 ) {
-				fprintf ( stderr, "%d, ", iter + 1 );
+				fprintf ( stdout, "%d, ", iter + 1 );
 			}
 		}
 
@@ -248,7 +248,7 @@ void iterate ( options *user_options, description *system ) {
 
 	if ( user_options->verbose_level == NORMAL ||
 			user_options->verbose_level == VERBOSE ) {
-		fprintf ( stderr, "\n\n" );
+		fprintf ( stdout, "\n\n" );
 	}
 
 	for ( i = 0; i < n; i++ ) {

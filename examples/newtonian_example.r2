@@ -5,8 +5,8 @@ dampening 0.67
 tolerance 0.01
 
 fluid options:
-density 0.994
-viscosity 0.8891
+density 0.78
+viscosity 1.100
 
 rugosity 0.035
 diameter 12.00

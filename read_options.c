@@ -56,15 +56,10 @@ void read_options ( int argc, char **argv,
 
 	if ( user_options->help == TRUE ) {
 		print_help ( argv );
-	} else {
-		if ( user_options->existing_file == READ_EXISTING_FILE ) {
-			read_from_file ( user_options, system );
-		} if ( user_options->existing_file == CREATE_NEW_FILE ) {
-			create_new_file ( user_options, system );
-		}
-		print_choices ( user_options, system );
+		finalize ( user_options, system );
+		exit (EXIT_SUCCESS);
 	}
-
+	print_choices ( user_options, system );
 }
 
 /*
@@ -76,63 +71,63 @@ void print_choices ( options *user_options, description *system ) {
 
 	if ( user_options->verbose_level != QUIET ) {
 
-		fprintf ( stderr, "OPTIONS SELECTED:\n\n" );
-		fprintf ( stderr, "  Iterations:   %d\n",
+		fprintf ( stdout, "OPTIONS SELECTED:\n\n" );
+		fprintf ( stdout, "  Iterations:   %d\n",
 				user_options->maxiter );
-		fprintf ( stderr, "  Tolerance:    %lf %%\n",
+		fprintf ( stdout, "  Tolerance:    %lf %%\n",
 				user_options->Q_tol_percentage );
-		fprintf ( stderr, "  Dampening:    %lf\n\n",
+		fprintf ( stdout, "  Dampening:    %lf\n\n",
 				user_options->dampening_factor );
-		fprintf ( stderr, "  Viscosity:    %lf cP\n",
+		fprintf ( stdout, "  Viscosity:    %lf cP\n",
 				system->fluid.eta_cP );
-		fprintf ( stderr, "  Density:      %lf g/cm3\n",
+		fprintf ( stdout, "  Density:      %lf g/cm3\n",
 				system->fluid.rho_g_cm3 );
 		switch ( user_options->type ) {
 			case POWER_LAW_SMOOTH_PIPE:
-				fprintf ( stderr, "  n:            %lf\n",
+				fprintf ( stdout, "  n:            %lf\n",
 						system->fluid.n );
-				fprintf ( stderr, "  k:            %lf Pa/sn\n",
+				fprintf ( stdout, "  k:            %lf Pa/sn\n",
 						system->fluid.k_Pa_sn );
 				break;
 			case POWER_LAW_ROUGH_PIPE:
-				fprintf ( stderr, "  n:            %lf\n",
+				fprintf ( stdout, "  n:            %lf\n",
 						system->fluid.n );
-				fprintf ( stderr, "  k:            %lf Pa/sn\n",
+				fprintf ( stdout, "  k:            %lf Pa/sn\n",
 						system->fluid.k_Pa_sn );
 				break;
 			case BINGHAM_PLASTIC:
-				fprintf ( stderr, "  T0:           %lf N/m2\n",
+				fprintf ( stdout, "  T0:           %lf N/m2\n",
 						system->fluid.T0_N_m2 );
-				fprintf ( stderr, "  mu-infty:     %lf cP\n",
+				fprintf ( stdout, "  mu-infty:     %lf cP\n",
 						system->fluid.mu_infty_cP );
 				break;
 			case STRUCTURAL_MODEL:
-				fprintf ( stderr, "  N0:           %lf cP\n",
+				fprintf ( stdout, "  N0:           %lf cP\n",
 						system->fluid.N0_cP );
-				fprintf ( stderr, "  lambda:       %lf s\n",
+				fprintf ( stdout, "  lambda:       %lf s\n",
 						system->fluid.lambda_s );
-				fprintf ( stderr, "  omega:        %lf\n",
+				fprintf ( stdout, "  omega:        %lf\n",
 						system->fluid.omega );
 				break;
 			case REAL_GAS:
-				fprintf ( stderr, "  T:            %lf C\n",
+				fprintf ( stdout, "  T:            %lf C\n",
 						system->fluid.T_oC );
-				fprintf ( stderr, "  MM:           %lf g/gmol\n",
+				fprintf ( stdout, "  MM:           %lf g/gmol\n",
 						system->fluid.MM_g_gmol );
-				fprintf ( stderr, "  Z:            %lf\n",
+				fprintf ( stdout, "  Z:            %lf\n",
 						system->fluid.Z );
-				fprintf ( stderr, "  Cp/Cv:        %lf\n",
+				fprintf ( stdout, "  Cp/Cv:        %lf\n",
 						system->fluid.k );
 				break;
 		}
-		fprintf ( stderr, "\n  Pipes:        %d\n",
+		fprintf ( stdout, "\n  Pipes:        %d\n",
 				user_options->no_of_pipes );
 		if ( user_options->verbose_level == VERBOSE ) {
-			fprintf ( stderr,
+			fprintf ( stdout,
 				"   Pipe\tLength\t\tDiameter\t" );
-			fprintf ( stderr, "Rugosity\tTerminal nodes\n" );
+			fprintf ( stdout, "Rugosity\tTerminal nodes\n" );
 			for ( int i = 0; i < user_options->no_of_pipes; i++ ) {
-				fprintf ( stderr,
+				fprintf ( stdout,
 					"    %d\t%f m\t%f cm\t%f mm\t%d and %d\n",
 					i+1,
 					system->pipes[i].L_m+system->pipes[i].L_eq_m,
@@ -147,41 +142,41 @@ void print_choices ( options *user_options, description *system ) {
 				* one.
 				*/
 			}
-			fprintf ( stderr, "\n" );
+			fprintf ( stdout, "\n" );
 		}
-		fprintf ( stderr, "  Nodes:        %d\n",
+		fprintf ( stdout, "  Nodes:        %d\n",
 				user_options->no_of_nodes );
 		if ( user_options->verbose_level == VERBOSE ) {
-			fprintf ( stderr, "   Node\tHeight\n" );
+			fprintf ( stdout, "   Node\tHeight\n" );
 			for ( int i = 0; i < user_options->no_of_nodes; i++ ) {
-				fprintf ( stderr,
+				fprintf ( stdout,
 					"    %d\t%f m\t",
 					i+1, system->nodes[i].H_m );
 				if ( system->nodes[i].is_external == TRUE ) {
-					fprintf ( stderr, "(open)" );
+					fprintf ( stdout, "(open)" );
 				}
-				fprintf ( stderr, "\n" );
+				fprintf ( stdout, "\n" );
 			}
-			fprintf ( stderr, "\n" );
+			fprintf ( stdout, "\n" );
 		}
-		fprintf ( stderr, "  Specs:        %d\n",
+		fprintf ( stdout, "  Specs:        %d\n",
 				user_options->no_of_specs );
 		if ( user_options->verbose_level == VERBOSE ) {
-			fprintf ( stderr, "   Node\t\tVariable\tValue\n" );
+			fprintf ( stdout, "   Node\t\tVariable\tValue\n" );
 			for ( int i = 0; i < user_options->no_of_specs; i++ ) {
 				if ( system->specs[i].specified_var == FLOW ) {
-					fprintf ( stderr,
+					fprintf ( stdout,
 						"    %d\t\tflow rate\t%f m3/h\n",
 						system->specs[i].node_number + 1,
 						system->specs[i].Q_m3_h_or_P_atm );
 				} else {
-					fprintf ( stderr,
+					fprintf ( stdout,
 						"    %d\t\tpressure\t%f atm\n",
 						system->specs[i].node_number + 1,
 						system->specs[i].Q_m3_h_or_P_atm );
 				}
 			}
-			fprintf ( stderr, "\n" );
+			fprintf ( stdout, "\n" );
 		}
 
 	}
@@ -272,15 +267,15 @@ void print_help ( char **argv ) {
 		"    Pipe rugosity in mm. Optional; individual rugosities\n" );
 	fprintf ( stdout, "    can be set with \"-p\" option for the n-th pipe\n" );
 
-	fprintf ( stdout, "OPTIONS: KNOTS AND PIPES\n" );
+	fprintf ( stdout, "OPTIONS: NODE AND PIPES\n" );
 	fprintf ( stdout,
-		"  -k, --node=KNOT_EXPRESSION\n" );
+		"  -k, --node=NODE_EXPRESSION\n" );
 	fprintf ( stdout,
 		"    Set each node Number, Height, and state (external or not)\n" );
 	fprintf ( stdout,
 		"    Heights can be globally defined through option \"-H\"\n" );
 	fprintf ( stdout,
-		"      \"KNOT_EXPRESSION\" is a double-quotes-delimited, comma-\n" );
+		"      \"NODE_EXPRESSION\" is a double-quotes-delimited, comma-\n" );
 	fprintf ( stdout,
 		"      separated list of definitions in the form \"key value\",\n" );
 	fprintf ( stdout,
@@ -386,9 +381,16 @@ void print_help ( char **argv ) {
 void read_from_command_line ( int argc, char **argv,
 		options *user_options, description *system ) {
 
-	int c, no_of_nodes, no_of_pipes, no_of_specs;
+	int c, i, modified;
+	int no_of_nodes, no_of_pipes, no_of_specs;
+	int node_index, pipe_index, spec_node, spec_var;
 	char *node_opts, *pipe_opts, *spec_opts;
+	char *node_opts_to_get_index, *pipe_opts_to_get_index,
+		*spec_opts_to_get_index;
+	char *node_index_str, *pipe_index_str;
 	char *savenodeopts, *savepipeopts, *savespecopts;
+	char *savenodeindex, *savepipeindex, *savespecindex;
+	char *spec_node_str, *spec_var_str;
 	const char *short_options =
 		"hf:o:V:I:ia:Q:t:d:v:D:R:k:p:s:n:K:T:m:N:l:w:M:Z:r:";
 	struct option long_options[] = {
@@ -436,17 +438,19 @@ void read_from_command_line ( int argc, char **argv,
 				break;
 
 			case 'f':
-				if ( ! access ( optarg, F_OK ) ) {
-					user_options->existing_file =
-						READ_EXISTING_FILE;
-				} else {
-					user_options->existing_file =
-						CREATE_NEW_FILE;
-				}
 				user_options->input_file_name = malloc (
 					( strlen ( optarg ) + 1 ) *
 					sizeof ( char ) );
 				strcpy ( user_options->input_file_name, optarg );
+				if ( ! access ( optarg, F_OK ) ) {
+					user_options->existing_file =
+						READ_EXISTING_FILE;
+					read_from_file ( user_options, system );
+				} else {
+					user_options->existing_file =
+						CREATE_NEW_FILE;
+					create_new_file ( user_options, system );
+				}
 				break;
 
 			case 'o':
@@ -516,59 +520,123 @@ void read_from_command_line ( int argc, char **argv,
 				break;
 
 			case 'k':
-				no_of_nodes = 0;
+				no_of_nodes = user_options->no_of_nodes - 1;
 				node_opts = strtok_r ( optarg, ",", &savenodeopts );
-				system->nodes = malloc ( sizeof ( node ) );
 				while ( node_opts != NULL ) {
-					system->nodes = realloc ( system->nodes,
-						( no_of_nodes + 1 ) *
-						sizeof ( node ) );
+					node_opts_to_get_index =
+						malloc ( sizeof ( char ) *
+							( strlen ( node_opts )
+							+ 1 ) );
+					strcpy ( node_opts_to_get_index, node_opts );
+					node_index_str =
+						strtok_r ( node_opts_to_get_index,
+							" ", &savenodeindex );
+					node_index = strtol ( node_index_str,
+							NULL, 0 ) - 1;
+					free ( node_opts_to_get_index );
+					if ( node_index > no_of_nodes ) {
+						no_of_nodes++;
+						system->nodes =
+							realloc ( system->nodes,
+								( no_of_nodes + 1 ) *
+								sizeof ( node ) );
+						system->nodes[no_of_nodes].H_m = 0.0;
+					}
 					eval_node_options ( node_opts,
-						system, no_of_nodes );
-					no_of_nodes++;
+						system, node_index );
 					node_opts = strtok_r ( NULL,
 						",", &savenodeopts );
 				}
-				user_options->no_of_nodes = no_of_nodes;
+				user_options->no_of_nodes = no_of_nodes + 1;
 				break;
 
 			case 'p':
-				no_of_pipes = 0;
+				no_of_pipes = user_options->no_of_pipes - 1;
 				pipe_opts = strtok_r ( optarg, ",", &savepipeopts );
-				system->pipes = malloc ( sizeof ( net_pipe ) );
 				while ( pipe_opts != NULL ) {
-					system->pipes = realloc ( system->pipes,
-						( no_of_pipes + 1 ) *
-						sizeof ( net_pipe ) );
-					system->pipes[no_of_pipes].D_cm =
-						user_options->diameter_general;
-					system->pipes[no_of_pipes].e_mm =
-						user_options->rugosity_general;
+					pipe_opts_to_get_index =
+						malloc ( sizeof ( char ) *
+							( strlen ( pipe_opts )
+							+ 1 ) );
+					strcpy ( pipe_opts_to_get_index, pipe_opts );
+					pipe_index_str =
+						strtok_r ( pipe_opts_to_get_index,
+							" ", &savepipeindex );
+					pipe_index = strtol ( pipe_index_str,
+							NULL, 0 ) - 1;
+					free ( pipe_opts_to_get_index );
+					if ( pipe_index > no_of_pipes ) {
+						no_of_pipes++;
+						system->pipes =
+							realloc ( system->pipes,
+								( no_of_pipes + 1 ) *
+								sizeof ( net_pipe ) );
+						system->pipes[no_of_pipes].D_cm =
+							user_options->
+								diameter_general;
+						system->pipes[no_of_pipes].L_eq_m =
+							0.0;
+						system->pipes[no_of_pipes].e_mm =
+							user_options->
+								rugosity_general;
+					}
 					eval_pipe_options ( pipe_opts,
-						system, no_of_pipes );
-					no_of_pipes++;
+						system, pipe_index );
 					pipe_opts = strtok_r ( NULL,
 						",", &savepipeopts );
 				}
-				user_options->no_of_pipes = no_of_pipes;
+				user_options->no_of_pipes = no_of_pipes + 1;
 				break;
 
 			case 's':
-				no_of_specs = 0;
+				no_of_specs = user_options->no_of_specs - 1;
 				spec_opts = strtok_r ( optarg, ",", &savespecopts );
-				system->specs = malloc ( sizeof
-					( specified_node_vars ) );
 				while ( spec_opts != NULL ) {
-					system->specs = realloc ( system->specs,
-						( no_of_specs + 1 ) *
+					spec_opts_to_get_index =
+						malloc ( sizeof ( char ) *
+							( strlen ( spec_opts )
+							+ 1 ) );
+					strcpy ( spec_opts_to_get_index, spec_opts );
+					spec_node_str =
+						strtok_r ( spec_opts_to_get_index,
+							" ", &savespecindex );
+					spec_node = strtol ( spec_node_str,
+							NULL, 0 ) - 1;
+					spec_var_str = strtok_r ( NULL, " ",
+							&savespecindex );
+					if ( ! strcmp ( spec_var_str,
+							"pressure" ) ) {
+						spec_var = PRESSURE;
+					} else {
+						spec_var = FLOW;
+					}
+					free ( spec_opts_to_get_index );
+					modified = FALSE;
+					for ( i = 0; i < user_options->no_of_specs;
+							i++ ) {
+						if ( system->specs[i].node_number ==
+						spec_node &&
+						system->specs[i].specified_var ==
+						spec_var ) {
+							modified = TRUE;
+							eval_spec_options (
+								spec_opts, system,
+									i );
+						}
+					}
+					if ( modified == FALSE ) {
+						no_of_specs++;
+						system->specs =
+							realloc ( system->specs,
+							( no_of_specs + 1 ) *
 						sizeof ( specified_node_vars ) );
-					eval_spec_options ( spec_opts,
-						system, no_of_specs );
-					no_of_specs++;
+						eval_spec_options ( spec_opts,
+							system, no_of_specs );
+					}
 					spec_opts = strtok_r ( NULL,
 						",", &savespecopts );
 				}
-				user_options->no_of_specs = no_of_specs;
+				user_options->no_of_specs = no_of_specs + 1;
 				break;
 
 			case 'n':
@@ -669,6 +737,7 @@ void eval_node_options ( char *line, description *system, int no_of_nodes ) {
 
 	word = strtok_r ( line, " :\n,",
 			&saveptrstrtokword );
+
 	if ( word != NULL ) {
 		word = strtok_r ( NULL, " :\n,",
 			&saveptrstrtokword );
