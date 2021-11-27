@@ -200,11 +200,11 @@ void print_help ( char **argv ) {
 	fprintf ( stdout,
 		"OPTIONS: PROGRAM\n" );
 	fprintf ( stdout,
-		"  -f, --file[=FILE]\n" );
+		"  -f, --file[ FILE]\n" );
 	fprintf ( stdout,
 		"    Get net description from FILE (defaults to input.rede2)\n" );
 	fprintf ( stdout,
-		"  -o, --results[=FILE]\n" );
+		"  -o, --results[ FILE]\n" );
 	fprintf ( stdout,
 		"    Write results to FILE (defaults to results.txt)\n" );
 	fprintf ( stdout,
@@ -212,25 +212,29 @@ void print_help ( char **argv ) {
 	fprintf ( stdout,
 		"    Print this help\n" );
 	fprintf ( stdout,
-		"  -V, --version\n" );
+		"  -V, --verbose\n" );
 	fprintf ( stdout,
-		"    Print program version\n" );
+		"    Level of nformation to be printed in terminal; can be\n" );
 	fprintf ( stdout,
-		"  -Q, --tolerance=TOL\n" );
+		"    one of \"quiet\" (nothing printed in terminal), \"summary\"\n" );
+	fprintf ( stdout,
+		"    or \"verbose\"\n" );
+	fprintf ( stdout,
+		"  -Q, --tolerance TOL\n" );
 	fprintf ( stdout,
 		"    Tolerance for flow rates' relative errors\n" );
 	fprintf ( stdout,
-		"  -a, --dampening=DAMPENING_FACTOR\n" );
+		"  -a, --dampening DAMPENING_FACTOR\n" );
 	fprintf ( stdout,
 		"    Dampening factor for solution\n" );
 	fprintf ( stdout,
-		"  -I, --iterations=MAXITER\n" );
+		"  -I, --iterations MAXITER\n" );
 	fprintf ( stdout,
 		"    Maximum number of iterations\n\n" );
 	fprintf ( stdout,
 		"OPTIONS: GENERAL\n" );
 	fprintf ( stdout,
-		"  -t, --type=TYPE\n" );
+		"  -t, --type TYPE\n" );
 	fprintf ( stdout,
 		"    Type of system to be calculated. TYPE can be one of\n" );
 	fprintf ( stdout,
@@ -249,27 +253,27 @@ void print_help ( char **argv ) {
 	fprintf ( stdout,
 		"      -> \"real gas\", for real gas in horizontal network\n" );
 	fprintf ( stdout,
-		"  -d, --density=DENSITY\n" );
+		"  -d, --density DENSITY\n" );
 	fprintf ( stdout,
 		"    Fluid density in g/cm3; defaults to 1.0\n" );
 	fprintf ( stdout,
-		"  -v, --viscosity=VISCOSITY\n" );
+		"  -v, --viscosity VISCOSITY\n" );
 	fprintf ( stdout,
 		"    fluid viscosity in cP; defaults to 0.8891\n" );
 	fprintf ( stdout,
-		"  -D, --diameter=DIAMETER\n" );
+		"  -D, --diameter DIAMETER\n" );
 	fprintf ( stdout,
 		"    Pipe diameter in cm. Optional; individual diamaters\n" );
 	fprintf ( stdout, "    can be set with \"-p\" option for the n-th pipe\n" );
 	fprintf ( stdout,
-		"  -R, --rugosity=RUGOSITY\n" );
+		"  -R, --rugosity RUGOSITY\n" );
 	fprintf ( stdout,
 		"    Pipe rugosity in mm. Optional; individual rugosities\n" );
 	fprintf ( stdout, "    can be set with \"-p\" option for the n-th pipe\n" );
 
 	fprintf ( stdout, "OPTIONS: NODE AND PIPES\n" );
 	fprintf ( stdout,
-		"  -k, --node=NODE_EXPRESSION\n" );
+		"  -k, --node NODE_EXPRESSION\n" );
 	fprintf ( stdout,
 		"    Set each node Number, Height, and state (external or not)\n" );
 	fprintf ( stdout,
@@ -287,7 +291,7 @@ void print_help ( char **argv ) {
 	fprintf ( stdout,
 		"        -k \"1 1 external, 2 9\"\n" );
 	fprintf ( stdout,
-		"  -p, --pipe=PIPE_EXPRESSION\n" );
+		"  -p, --pipe PIPE_EXPRESSION\n" );
 	fprintf ( stdout,
 		"    Set each pipe start and end nodes, rugosity, diameter, \n" );
 	fprintf ( stdout,
@@ -315,7 +319,7 @@ void print_help ( char **argv ) {
 	fprintf ( stdout,
 		"              diameter 10 start 1 end 3\"\n" );
 	fprintf ( stdout,
-		"  -s, --spec=SPEC_EXPRESSION\n" );
+		"  -s, --spec SPEC_EXPRESSION\n" );
 	fprintf ( stdout,
 		"      Set specifications (as pressure or flow) for a few nodes.\n" );
 	fprintf ( stdout,
@@ -334,45 +338,45 @@ void print_help ( char **argv ) {
 		"        -p \"1 pressure 1, 3 flow -8\" \n\n" );
 	fprintf ( stdout, "OPTIONS: MODEL-SPECIFIC\n" );
 	fprintf ( stdout,
-		"  -n, --n=N_FACTOR\n" );
+		"  -n, --n N_FACTOR\n" );
 	fprintf ( stdout,
 		"    n-factor for power law\n" );
 	fprintf ( stdout,
-		"  -K, --k=K_FACTOR\n" );
+		"  -K, --k K_FACTOR\n" );
 	fprintf ( stdout,
 		"    k-factor for power law\n" );
 	fprintf ( stdout,
-		"  -T, --tzero=T0, --temperature=T0\n" );
+		"  -T, --tzero T0, --temperature T0\n" );
 	fprintf ( stdout,
 		"    T0 for Bingham plastic modelling or temperature for real gas\n" );
 	fprintf ( stdout,
 		"    according to \"-t\" option\n" );
 	fprintf ( stdout,
-		"  -m, --muinfty=MU_INFTY\n" );
+		"  -m, --muinfty MU_INFTY\n" );
 	fprintf ( stdout,
 		"    mu_infty for Bingham plastic modelling\n" );
 	fprintf ( stdout,
-		"  -N, --nzero=N_ZERO\n" );
+		"  -N, --nzero N_ZERO\n" );
 	fprintf ( stdout,
 		"    N0-factor for structural model\n" );
 	fprintf ( stdout,
-		"  -l, --lambda=LAMBDA\n" );
+		"  -l, --lambda LAMBDA\n" );
 	fprintf ( stdout,
 		"    lambda-factor for structural model\n" );
 	fprintf ( stdout,
-		"  -w, --omega=OMEGA\n" );
+		"  -w, --omega OMEGA\n" );
 	fprintf ( stdout,
 		"    omega-factor for structural model\n" );
 	fprintf ( stdout,
-		"  -M, --mm=MM\n" );
+		"  -M, --mm MM\n" );
 	fprintf ( stdout,
 		"    Molecular mass for real gas\n" );
 	fprintf ( stdout,
-		"  -Z, --Z=Z\n" );
+		"  -Z, --Z Z\n" );
 	fprintf ( stdout,
 		"    Compressibility factor for real gas\n" );
 	fprintf ( stdout,
-		"  -r, --r=r\n" );
+		"  -r, --r r\n" );
 	fprintf ( stdout,
 		"    Ratio between Cp and Cv for real gas\n" );
 
