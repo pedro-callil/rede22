@@ -9,8 +9,8 @@ SRC	= main.c \
 
 HDR	= header.h
 
-BIN	= rede2
-BINW	= rede2.exe
+BIN	= rede22
+BINW	= rede22.exe
 
 DFLAGS	= -ggdb3
 CFLAGS	= -Ofast -Wall -Werror -Wextra -pedantic -std=gnu99

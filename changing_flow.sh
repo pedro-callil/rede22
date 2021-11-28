@@ -1,13 +1,13 @@
 #! /bin/bash
 
-# This file is an example of how one might use the executable "rede2"
+# This file is an example of how one might use the executable "rede22"
 # to make a sensitivity analysis. Here, we will simulate the behaviour
 # of the net, changing the flow of water in node 1, and observing the
 # changes in output values (pressure in each node, Fanning friction
 # factor and Reynolds number in each tube, etc.).
 
 usage () {
-	echo -n "Usage: $0 [-f <file>] [-s <smallest>] [-b <biggest>]" 1>&2
+	echo -n "Usage: $0 [-f <file>] [-s <smallest>] [-b <biggest>] " 1>&2
 	echo "[-i <increment>] [-o <output file>]" 1>&2
 	exit 1
 }
@@ -38,7 +38,7 @@ done
 shift $((OPTIND-1))
 
 # writing first line of csv
-./rede2 -f "$infile" -V verbose | \
+./rede22 -f "$infile" -V verbose | \
 	sed 's/^[\t\ ]\+//g' | \
 	grep [0-9]: -A 3 | \
 	cut -d ':' -f 1 | \
@@ -56,7 +56,7 @@ shift $((OPTIND-1))
 
 for i in $(seq $smallest $increment $biggest)
 do
-	./rede2 -f "$infile" -V verbose -s "1 flow $i" | \
+	./rede22 -f "$infile" -V verbose -s "1 flow $i" | \
 		sed -e 's/^[\t\ ]\+//g' | \
 		grep [0-9]: -A 3 | \
 		sed 's/\(.*\)out/-\1/g' | \
