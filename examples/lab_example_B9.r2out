@@ -1,115 +1,115 @@
-RESULTS OBTAINED AFTER CONVERGENCE, 24 ITERATIONS
+RESULTS OBTAINED AFTER CONVERGENCE, 20 ITERATIONS
 	PIPES:
 	Pipe 1:	Nodes	1	to	2
-		Q  =	1.000000	m3/h
-		f  =	0.007329
-		Re =	12431.036038	(turbulent)
+		Q  =	4.000003	m3/h
+		f  =	0.005248
+		Re =	49724.175307	(turbulent)
 	Pipe 2:	Nodes	2	to	3
-		Q  =	0.050108	m3/h
-		f  =	0.025686
-		Re =	622.902962	(laminar)
+		Q  =	2.384633	m3/h
+		f  =	0.005901
+		Re =	29643.470224	(turbulent)
 	Pipe 3:	Nodes	2	to	8
-		Q  =	0.949892	m3/h
-		f  =	0.007430
-		Re =	11808.143081	(turbulent)
+		Q  =	1.615376	m3/h
+		f  =	0.006482
+		Re =	20080.865176	(turbulent)
 	Pipe 4:	Nodes	3	to	4
-		Q  =	0.050108	m3/h
-		f  =	0.020067
-		Re =	797.311023	(laminar)
+		Q  =	2.384631	m3/h
+		f  =	0.005585
+		Re =	37943.565579	(turbulent)
 	Pipe 5:	Nodes	8	to	9
-		Q  =	0.949892	m3/h
-		f  =	0.006971
-		Re =	15114.418375	(turbulent)
+		Q  =	1.615374	m3/h
+		f  =	0.006113
+		Re =	25703.431117	(turbulent)
 	Pipe 6:	Nodes	4	to	5
-		Q  =	0.659098	m3/h
-		f  =	0.007677
-		Re =	10487.382496	(turbulent)
+		Q  =	0.654757	m3/h
+		f  =	0.007691
+		Re =	10418.370300	(turbulent)
 	Pipe 7:	Nodes	5	to	7
-		Q  =	0.659098	m3/h
-		f  =	0.007677
-		Re =	10487.382496	(turbulent)
-	Pipe 8:	Nodes	6	to	4
-		Q  =	0.608989	m3/h
-		f  =	0.007844
-		Re =	9690.063435	(turbulent)
-	Pipe 9:	Nodes	10	to	6
-		Q  =	1.698186	m3/h
-		f  =	0.006041
-		Re =	27021.052819	(turbulent)
+		Q  =	0.654757	m3/h
+		f  =	0.007691
+		Re =	10418.370300	(turbulent)
+	Pipe 8:	Nodes	4	to	6
+		Q  =	1.729878	m3/h
+		f  =	0.006015
+		Re =	27525.323889	(turbulent)
+	Pipe 9:	Nodes	6	to	10
+		Q  =	0.993812	m3/h
+		f  =	0.006891
+		Re =	15813.242614	(turbulent)
 	Pipe 10:	Nodes	13	to	11
-		Q  =	0.949892	m3/h
-		f  =	0.006971
-		Re =	15114.402298	(turbulent)
+		Q  =	1.615366	m3/h
+		f  =	0.006113
+		Re =	25703.173895	(turbulent)
 	Pipe 11:	Nodes	15	to	12
-		Q  =	1.748294	m3/h
-		f  =	0.005709
-		Re =	34772.948207	(turbulent)
+		Q  =	1.390816	m3/h
+		f  =	0.006018
+		Re =	27662.798189	(turbulent)
 	Pipe 12:	Nodes	6	to	14
-		Q  =	1.089197	m3/h
-		f  =	0.006733
-		Re =	17330.997422	(turbulent)
+		Q  =	0.736070	m3/h
+		f  =	0.007453
+		Re =	11712.209886	(turbulent)
 	Pipe 13:	Nodes	9	to	13
-		Q  =	0.949892	m3/h
-		f  =	0.006971
-		Re =	15114.418375	(turbulent)
+		Q  =	1.615374	m3/h
+		f  =	0.006113
+		Re =	25703.431117	(turbulent)
 	Pipe 14:	Nodes	14	to	15
-		Q  =	1.089197	m3/h
-		f  =	0.006380
-		Re =	21663.743324	(turbulent)
+		Q  =	0.736068	m3/h
+		f  =	0.007037
+		Re =	14640.207110	(turbulent)
 	Pipe 15:	Nodes	7	to	16
-		Q  =	0.659098	m3/h
-		f  =	0.007241
-		Re =	13109.224667	(turbulent)
+		Q  =	0.654755	m3/h
+		f  =	0.007254
+		Re =	13022.907628	(turbulent)
 	Pipe 16:	Nodes	16	to	15
-		Q  =	0.659097	m3/h
-		f  =	0.007241
-		Re =	13109.211478	(turbulent)
+		Q  =	0.654750	m3/h
+		f  =	0.007254
+		Re =	13022.696596	(turbulent)
 	NODES:
 	Node 1:
-		P =	1.107292	atm
-		Q =	1.000000	m3/h	(in)
+		P =	1.249552	atm
+		Q =	4.000000	m3/h	(in)
 	Node 2:
-		P =	1.107184	atm
+		P =	1.217422	atm
 
 	Node 3:
-		P =	1.208831	atm
+		P =	1.303031	atm
 
 	Node 4:
-		P =	1.209787	atm
+		P =	1.271637	atm
 
 	Node 5:
-		P =	1.207561	atm
+		P =	1.264352	atm
 
 	Node 6:
-		P =	1.104068	atm
+		P =	1.146208	atm
 
 	Node 7:
-		P =	1.069194	atm
+		P =	1.124339	atm
 
 	Node 8:
-		P =	1.106336	atm
+		P =	1.212605	atm
 
 	Node 9:
-		P =	1.106604	atm
+		P =	1.199296	atm
 
 	Node 10:
 		P =	1.000000	atm
-		Q =	1.698186	m3/h	(in)
+		Q =	0.993813	m3/h	(out)
 	Node 11:
 		P =	1.000000	atm
-		Q =	0.949892	m3/h	(out)
+		Q =	1.615370	m3/h	(out)
 	Node 12:
 		P =	1.000000	atm
-		Q =	1.748294	m3/h	(out)
+		Q =	1.390817	m3/h	(out)
 	Node 13:
-		P =	1.105093	atm
+		P =	1.164814	atm
 
 	Node 14:
-		P =	1.047994	atm
+		P =	1.090063	atm
 
 	Node 15:
-		P =	0.947027	atm
+		P =	0.979272	atm
 
 	Node 16:
-		P =	0.951468	atm
+		P =	0.992300	atm
 
