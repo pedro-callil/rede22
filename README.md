@@ -33,7 +33,6 @@ Referências
 
 <a id="1">[1]</a>
 GUT, J. A. W.; PINTO, J. M.; SONG, T. W. Análise de redes de tubulação:
-Desenvolvimento de instalação experimental e modelagem matemática. In: Anais da
-COBEM 97. Bauru: [s.n.], 1997.
-
+Desenvolvimento de instalação experimental e modelagem matemática. In: XIV Congresso
+Brasileiro de Engenharia Mecânica, Anais da COBEM 97. Bauru: [s.n.], 1997.
 
